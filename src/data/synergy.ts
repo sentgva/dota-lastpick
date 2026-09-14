@@ -18,7 +18,7 @@ export interface ComboRule {
 /** Порядок в паре не важен — сопоставление идёт в обе стороны. */
 export const COMBOS: ComboRule[] = [
   // AoE ultimate setups
-  { a: 'magnataur', b: 'sven', value: 6, reason: 'RP собирает пачку под God\'s Strength' },
+  { a: 'magnataur', b: 'sven', value: 6, reason: 'Reverse Polarity sets up God Strength' },
   { a: 'magnataur', b: 'juggernaut', value: 5, reason: 'Reverse Polarity sets up Omnislash' },
   { a: 'magnataur', b: 'luna', value: 5, reason: 'Reverse Polarity sets up Eclipse' },
   { a: 'magnataur', b: 'invoker', value: 5, reason: 'Reverse Polarity sets up Sun Strike and Chaos Meteor' },
