@@ -17,6 +17,20 @@ export interface StatsSnapshot {
   synergy: Record<string, Record<string, [number, number]>>;
   /** items[heroId][itemId] = [матчей с предметом, побед с ним] */
   items?: Record<string, Record<string, [number, number]>>;
+  /** Что собирали ПРОТИВ героя те, кто выиграл: vsItems[heroId] */
+  vsItems?: Record<string, { games: number; items: Record<string, number> }>;
+}
+
+/** Ниже этих порогов сравнивать частоты бессмысленно — слишком мало данных. */
+const MIN_VS_GAMES = 200;
+const MIN_VS_ITEM = 15;
+
+export interface CounterItemStat {
+  id: number;
+  /** На сколько процентов предмет встречается чаще обычного против этих героев. */
+  rate: number;
+  /** Против кого из выбранных врагов предмет особенно частый. */
+  against: string[];
 }
 
 export interface ItemStat {
@@ -86,4 +100,66 @@ export function itemsOf(stats: StatsSnapshot | null, heroId: number): ItemStat[]
       winrate: x.games > 0 ? (x.wins / x.games) * 100 : 0,
     }))
     .sort((a, b) => b.games - a.games);
+}
+
+/**
+ * Топ предметов, которые собирали победители против этих героев.
+ *
+ * Сырая частота бесполезна: Blink и Power Treads берут против всех подряд.
+ * Поэтому считаем, во сколько раз предмет встречается чаще обычного —
+ * так против Riki всплывает Dust, а против PA — Monkey King Bar.
+ */
+export function counterItemsOf(
+  stats: StatsSnapshot | null,
+  enemies: { id: number; name: string }[],
+  limit = 12,
+): CounterItemStat[] {
+  if (!stats?.vsItems || enemies.length === 0) return [];
+
+  // Базовая частота предмета у победителей вообще, по всем героям.
+  const baseCount = new Map<number, number>();
+  let baseGames = 0;
+  for (const entry of Object.values(stats.vsItems)) {
+    baseGames += entry.games;
+    for (const [id, count] of Object.entries(entry.items)) {
+      baseCount.set(Number(id), (baseCount.get(Number(id)) ?? 0) + count);
+    }
+  }
+  if (baseGames === 0) return [];
+
+  const totals = new Map<number, { sum: number; against: { name: string; lift: number }[] }>();
+  let covered = 0;
+
+  for (const enemy of enemies) {
+    const entry = stats.vsItems[enemy.id];
+    if (!entry || entry.games < MIN_VS_GAMES) continue;
+    covered += 1;
+    for (const [id, count] of Object.entries(entry.items)) {
+      const itemId = Number(id);
+      const rate = (count / entry.games) * 100;
+      const base = ((baseCount.get(itemId) ?? 0) / baseGames) * 100;
+      if (base <= 0 || count < MIN_VS_ITEM) continue;
+      const lift = rate / base;
+      const acc = totals.get(itemId) ?? { sum: 0, against: [] };
+      acc.sum += lift;
+      acc.against.push({ name: enemy.name, lift });
+      totals.set(itemId, acc);
+    }
+  }
+  if (covered === 0) return [];
+
+  return [...totals.entries()]
+    .map(([id, acc]) => {
+      const lift = acc.sum / covered;
+      const notable = acc.against
+        .filter((a) => a.lift > 1.3)
+        .sort((a, b) => b.lift - a.lift)
+        .slice(0, 2)
+        .map((a) => a.name);
+      return { id, rate: (lift - 1) * 100, against: notable };
+    })
+    // Берём только то, что заметно выше обычного — иначе это просто популярный предмет.
+    .filter((c) => c.rate > 15)
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, limit);
 }

@@ -7,7 +7,7 @@ import { counterItems, draftThreats } from '../data/itemCounters';
 import { shortName } from '../data/synergy';
 import { isWholeItem } from '../data/wholeItems';
 import { fitsPosition } from '../data/itemRoles';
-import { itemsOf } from '../api/stats';
+import { counterItemsOf, itemsOf } from '../api/stats';
 import { POSITION_LABEL, positionsOf, type Position } from '../data/positions';
 
 const TOP_CORE = 10;
@@ -36,6 +36,16 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
   const enemyShort = enemies.map((e) => shortName(e.name));
   const counters = enemies.length ? counterItems(enemyShort, enemies.map((e) => e.localized_name)) : [];
   const threats = enemies.length ? draftThreats(enemyShort) : [];
+
+  // Что реально собирают победители против этих героев. Курируемые правила
+  // остаются ниже — они объясняют «почему», а это показывает «что».
+  const measured = counterItemsOf(
+    stats,
+    enemies.map((e) => ({ id: e.id, name: e.localized_name })),
+  )
+    .map((c) => ({ ...c, found: byId?.get(c.id) }))
+    .filter((c) => isWholeItem(c.found?.key ?? '', c.found?.item))
+    .slice(0, 10);
 
   // Старт — это танго, ветки и квеллинг. Фильтр «целых предметов» здесь
   // неуместен: он выбрасывал ровно то, что на старте и покупают.
@@ -70,10 +80,35 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
               ))}
             </ul>
           )}
+          {measured.length > 0 && (
+            <>
+              <p className="phase-label">Most built by winners against this draft</p>
+              <div className="item-row">
+                {measured.map((c) => (
+                  <ItemIcon
+                    key={c.id}
+                    item={c.found?.item}
+                    fallbackName={`#${c.id}`}
+                    caption={`${c.rate.toFixed(0)}%`}
+                    title={
+                      c.against.length
+                        ? `${c.found?.item.dname ?? ''} — in ${c.rate.toFixed(0)}% of winning builds, especially against ${c.against.join(' and ')}`
+                        : `${c.found?.item.dname ?? ''} — in ${c.rate.toFixed(0)}% of winning builds`
+                    }
+                    onOpen={setOpenItem}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
           {counters.length === 0 ? (
-            <p className="muted small">No special item requirements — go with the standard build.</p>
+            measured.length === 0 && (
+              <p className="muted small">No special item requirements — go with the standard build.</p>
+            )
           ) : (
             <>
+              {measured.length > 0 && <p className="phase-label">What this draft demands</p>}
               <div className="item-row">
                 {counters.slice(0, 10).map((c) => (
                   <ItemIcon

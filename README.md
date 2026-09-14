@@ -15,8 +15,10 @@ explains why, and shows what to buy against that draft.
   margin of error, so a real edge is distinguishable from noise.
 - **Item builds** — popular purchases per hero, filtered per position, components hidden.
   Tap an item to see what it does.
-- **Against the enemy draft** — which items this specific lineup demands (detection,
-  healing reduction, break, BKB…) and which enemy triggered each one.
+- **Against the enemy draft** — what winners actually built against these heroes,
+  ranked by how much more often an item appears than usual: Monkey King Bar shows up
+  +172% against Phantom Assassin, Silver Edge +74% against Spectre. Curated rules sit
+  below and explain why.
 - **Position filter** — Carry, Mid, Offlane, Support, Hard Support.
 
 ## How the score works
@@ -47,7 +49,7 @@ The frontend calls OpenDota directly from the browser (they send
 |---|---|---|
 | Heroes, win rates per bracket | `/heroStats` | 24 h |
 | Hero matchups | `/heroes/{id}/matchups` | 12 h |
-| Item purchases | `/heroes/{id}/itemPopularity` | 12 h |
+| Starting items | `/heroes/{id}/itemPopularity` | 12 h |
 | Item constants | `/constants/items` | 7 days |
 
 Rate limit without a key is 60 req/min and 2000/day, so everything is cached in
@@ -64,6 +66,10 @@ Baseline stats are solid — `/heroStats` aggregates ~43M picks across rank brac
 
 STRATZ would fix this (full match coverage plus real pair synergy), but their API
 requires an account with 100 public matches.
+
+Matchups, pair synergy, core items and counter-items come from `public/stats.json` —
+our own aggregate over raw Steam matches (`scripts/collect.mjs`), refreshed nightly by
+a GitHub Action. OpenDota covers hero metadata and starting purchases.
 
 ## Curated data
 

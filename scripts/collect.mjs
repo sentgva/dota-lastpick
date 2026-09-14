@@ -58,7 +58,17 @@ function loadSnapshot() {
     return s;
   } catch {
     console.log('снапшот не найден, начинаем с нуля');
-    return { version: 2, updated: null, matches: 0, sources: {}, cursor: {}, matchup: {}, synergy: {}, items: {} };
+    return {
+      version: 3,
+      updated: null,
+      matches: 0,
+      sources: {},
+      cursor: {},
+      matchup: {},
+      synergy: {},
+      items: {},
+      vsItems: {},
+    };
   }
 }
 
@@ -72,6 +82,7 @@ function bump(table, a, b, win) {
 
 function ingest(snap, match) {
   snap.items ??= {};
+  snap.vsItems ??= {};
   const R = match.radiant;
   const D = match.dire;
   if (R.length !== 5 || D.length !== 5) return false;
@@ -108,6 +119,22 @@ function ingest(snap, match) {
       const cell = (row[item] ??= [0, 0]);
       cell[0] += 1;
       if (p.won) cell[1] += 1;
+    }
+  }
+
+  // Что собирали ПРОТИВ каждого героя те, кто выиграл. Курируемые правила
+  // («против невидимости — сентри») так заменяются фактическими данными.
+  const losers = radiantWon ? D : R;
+  for (const p of match.players ?? []) {
+    if (!p.won || !p.hero || !p.items?.length) continue;
+    for (const enemy of losers) {
+      const entry = (snap.vsItems[enemy] ??= { games: 0, items: {} });
+      // games считаем один раз на игрока-победителя, а не на предмет
+      entry.games += 1;
+      for (const item of new Set(p.items)) {
+        if (!item) continue;
+        entry.items[item] = (entry.items[item] ?? 0) + 1;
+      }
     }
   }
   return true;
@@ -260,5 +287,7 @@ console.log(`добавлено матчей: ${taken.toLocaleString('ru')} за
 console.log(`всего в снапшоте: ${snap.matches.toLocaleString('ru')} (было ${before.toLocaleString('ru')})`);
 const itemRows = Object.values(snap.items ?? {}).reduce((n, row) => n + Object.keys(row).length, 0);
 console.log(`пар в матрице: ${Object.keys(snap.matchup).length} героев, в среднем ${avg.toFixed(0)} игр на пару`);
+const vsRows = Object.values(snap.vsItems ?? {}).reduce((n, e) => n + Object.keys(e.items).length, 0);
 console.log(`статистика предметов: ${Object.keys(snap.items ?? {}).length} героев, ${itemRows.toLocaleString('ru')} записей`);
+console.log(`предметы против героев: ${Object.keys(snap.vsItems ?? {}).length} героев, ${vsRows.toLocaleString('ru')} записей`);
 console.log(`файл: ${OUT} — ${kb} КБ`);
