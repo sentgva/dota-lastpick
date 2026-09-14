@@ -23,35 +23,24 @@ npm run build      # сборка в dist/ (чистая статика)
 npm run build     # получаем папку dist/
 ```
 
-Дальше — GitHub Pages, сборка идёт автоматически (`.github/workflows/deploy.yml`).
+Проект развёрнут на **Vercel** — настройки он берёт из `vercel.json`, сборка
+запускается автоматически при каждом `git push`.
 
-**Важно:** на бесплатном плане GitHub Pages работает только для **публичных**
-репозиториев. Секретов в коде нет — `.env` в `.gitignore`, — поэтому публичный
-репозиторий безопасен.
+1. <https://vercel.com> → войти через GitHub.
+2. **Add New → Project** → выбрать репозиторий → **Deploy**. Настройки не трогать.
 
-1. Создайте публичный репозиторий на <https://github.com/new> (без README и
-   .gitignore — они уже есть).
-2. Привяжите и отправьте код:
+Текущий адрес: <https://dota-lastpick.vercel.app>
 
-   ```bash
-   git remote add origin https://github.com/ВАШ_ЛОГИН/dota-lastpick.git
-   git push -u origin main
-   ```
-
-3. В репозитории: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. Вкладка **Actions** — дождитесь зелёной галочки (около минуты).
-
-Адрес приложения: `https://ВАШ_ЛОГИН.github.io/dota-lastpick/`
-
-Альтернативы, если Pages не подойдёт: Netlify, Cloudflare Pages, surge.sh
-(`npx surge dist`). В `vite.config.ts` стоит `base: './'`, поэтому сборка работает
-из любой подпапки.
+Два варианта, которые не подошли и описаны здесь, чтобы не наступить дважды:
+**GitHub Pages** (`.github/workflows/deploy.yml` оставлен в репозитории) — домен
+`github.io` недоступен из некоторых сетей; **Netlify** (`netlify.toml`) — заблокировал
+аккаунт после первого деплоя.
 
 **3. Заполнить `.env`** в корне проекта (скопируйте `.env.example`):
 
 ```
 BOT_TOKEN=8123456789:AAH...
-WEBAPP_URL=https://weird-name-123.netlify.app
+WEBAPP_URL=https://dota-lastpick.vercel.app/
 ```
 
 **4. Поставить кнопку меню — один раз:**
@@ -82,8 +71,8 @@ git commit -m "что изменилось"
 git push
 ```
 
-GitHub Actions пересоберёт и выложит новую версию сам. Бота трогать не нужно —
-адрес не меняется.
+Vercel пересоберёт и выложит новую версию сам, примерно за минуту. Бота трогать
+не нужно — адрес не меняется.
 
 ### Отладка внутри Telegram с живой перезагрузкой
 
