@@ -5,11 +5,14 @@ interface Props {
   item: ItemConstant | undefined;
   fallbackName?: string;
   title?: string;
+  /** Короткая подпись под иконкой — например винрейт с предметом. */
+  caption?: string;
+  captionTone?: 'pos' | 'neg';
   /** Клик открывает карточку с описанием предмета. */
   onOpen?(item: ItemConstant): void;
 }
 
-export function ItemIcon({ item, fallbackName, title, onOpen }: Props) {
+export function ItemIcon({ item, fallbackName, title, caption, captionTone, onOpen }: Props) {
   const label = item?.dname ?? fallbackName ?? 'Unknown item';
   return (
     <button
@@ -24,6 +27,7 @@ export function ItemIcon({ item, fallbackName, title, onOpen }: Props) {
         <div className="item-placeholder" />
       )}
       <span className="item-name">{label}</span>
+      {caption && <span className={`item-caption${captionTone ? ' ' + captionTone : ''}`}>{caption}</span>}
     </button>
   );
 }

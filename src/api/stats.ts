@@ -15,6 +15,17 @@ export interface StatsSnapshot {
   matchup: Record<string, Record<string, [number, number]>>;
   /** synergy[a][b] = [игр вместе, побед вместе] */
   synergy: Record<string, Record<string, [number, number]>>;
+  /** items[heroId][itemId] = [матчей с предметом, побед с ним] */
+  items?: Record<string, Record<string, [number, number]>>;
+}
+
+export interface ItemStat {
+  id: number;
+  games: number;
+  wins: number;
+  /** Доля матчей героя, в которых предмет оказался в инвентаре, %. */
+  pickRate: number;
+  winrate: number;
 }
 
 let cache: Promise<StatsSnapshot | null> | null = null;
@@ -56,4 +67,23 @@ export function synergyOf(
 ): { games: number; wins: number } | null {
   const cell = stats?.synergy?.[a]?.[b];
   return cell ? { games: cell[0], wins: cell[1] } : null;
+}
+
+/**
+ * Финальные предметы героя по нашим данным, от самых частых.
+ * Steam отдаёт инвентарь на конец матча, поэтому это именно ядро сборки,
+ * а не порядок покупки.
+ */
+export function itemsOf(stats: StatsSnapshot | null, heroId: number): ItemStat[] {
+  const row = stats?.items?.[heroId];
+  if (!row) return [];
+  const list = Object.entries(row).map(([id, [games, wins]]) => ({ id: Number(id), games, wins }));
+  const heroGames = Math.max(...list.map((x) => x.games), 1);
+  return list
+    .map((x) => ({
+      ...x,
+      pickRate: (x.games / heroGames) * 100,
+      winrate: x.games > 0 ? (x.wins / x.games) * 100 : 0,
+    }))
+    .sort((a, b) => b.games - a.games);
 }

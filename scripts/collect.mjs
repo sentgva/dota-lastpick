@@ -58,7 +58,7 @@ function loadSnapshot() {
     return s;
   } catch {
     console.log('снапшот не найден, начинаем с нуля');
-    return { version: 1, updated: null, matches: 0, sources: {}, cursor: {}, matchup: {}, synergy: {} };
+    return { version: 2, updated: null, matches: 0, sources: {}, cursor: {}, matchup: {}, synergy: {}, items: {} };
   }
 }
 
@@ -71,6 +71,7 @@ function bump(table, a, b, win) {
 }
 
 function ingest(snap, match) {
+  snap.items ??= {};
   const R = match.radiant;
   const D = match.dire;
   if (R.length !== 5 || D.length !== 5) return false;
@@ -95,6 +96,18 @@ function ingest(snap, match) {
         bump(snap.synergy, team[i], team[k], won);
         bump(snap.synergy, team[k], team[i], won);
       }
+    }
+  }
+  // Финальные предметы героя: сколько раз собран и сколько с ним выиграно.
+  // Стартовых закупов в Steam API нет — только инвентарь на момент конца матча.
+  for (const p of match.players ?? []) {
+    if (!p.hero || !p.items?.length) continue;
+    const row = (snap.items[p.hero] ??= {});
+    for (const item of new Set(p.items)) {
+      if (!item) continue;
+      const cell = (row[item] ??= [0, 0]);
+      cell[0] += 1;
+      if (p.won) cell[1] += 1;
     }
   }
   return true;
@@ -185,11 +198,18 @@ async function* fromSteam(startCursor) {
       if (m.duration < 600) continue;
       const radiant = [];
       const dire = [];
+      const players = [];
       for (const p of m.players ?? []) {
         // player_slot < 128 — Radiant, иначе Dire
-        (p.player_slot < 128 ? radiant : dire).push(p.hero_id);
+        const isRadiant = p.player_slot < 128;
+        (isRadiant ? radiant : dire).push(p.hero_id);
+        players.push({
+          hero: p.hero_id,
+          won: isRadiant === m.radiant_win,
+          items: [p.item_0, p.item_1, p.item_2, p.item_3, p.item_4, p.item_5].filter(Boolean),
+        });
       }
-      yield { radiant, dire, radiantWin: m.radiant_win };
+      yield { radiant, dire, radiantWin: m.radiant_win, players };
     }
     yield { cursor: seq };
   }
@@ -238,5 +258,7 @@ const secs = (Date.now() - t0) / 1000;
 const kb = (readFileSync(OUT).length / 1024).toFixed(0);
 console.log(`добавлено матчей: ${taken.toLocaleString('ru')} за ${secs.toFixed(0)} с`);
 console.log(`всего в снапшоте: ${snap.matches.toLocaleString('ru')} (было ${before.toLocaleString('ru')})`);
+const itemRows = Object.values(snap.items ?? {}).reduce((n, row) => n + Object.keys(row).length, 0);
 console.log(`пар в матрице: ${Object.keys(snap.matchup).length} героев, в среднем ${avg.toFixed(0)} игр на пару`);
+console.log(`статистика предметов: ${Object.keys(snap.items ?? {}).length} героев, ${itemRows.toLocaleString('ru')} записей`);
 console.log(`файл: ${OUT} — ${kb} КБ`);

@@ -583,6 +583,15 @@ h4 { margin: 12px 0 6px; }
   text-overflow: ellipsis;
 }
 .phase-label { margin: 0 0 5px; font-size: 13px; color: var(--neutral-500); }
+.item-caption {
+  display: block;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--neutral-500);
+}
+.item-caption.pos { color: var(--accent-300); }
+.item-caption.neg { color: var(--neg); }
+.build .phase h4 { display: flex; align-items: center; }
 .build-note {
   margin: 4px 0 0;
   padding-top: 8px;

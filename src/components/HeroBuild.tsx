@@ -1,22 +1,19 @@
 import { useState } from 'react';
 import type { Hero, ItemConstant, ItemPopularity } from '../types';
 import { ItemDetails } from './ItemDetails';
-import { useItemConstants, useItemPopularity } from '../hooks/useDota';
+import { useItemConstants, useItemPopularity, useStats } from '../hooks/useDota';
 import { ItemIcon } from './ItemIcon';
 import { counterItems, draftThreats } from '../data/itemCounters';
 import { shortName } from '../data/synergy';
 import { isWholeItem } from '../data/wholeItems';
 import { fitsPosition } from '../data/itemRoles';
+import { itemsOf } from '../api/stats';
 import { POSITION_LABEL, positionsOf, type Position } from '../data/positions';
 
-const PHASES: { key: keyof ItemPopularity; label: string }[] = [
-  { key: 'start_game_items', label: 'Starting Items' },
-  { key: 'early_game_items', label: 'Early Game' },
-  { key: 'mid_game_items', label: 'Mid Game' },
-  { key: 'late_game_items', label: 'Late Game' },
-];
-
-const TOP_PER_PHASE = 8;
+const TOP_CORE = 10;
+const TOP_START = 7;
+/** Винрейт предмета при меньшей выборке — шум, показываем только долю сборок. */
+const MIN_ITEM_GAMES = 60;
 
 interface Props {
   hero: Hero;
@@ -27,9 +24,9 @@ interface Props {
 export function HeroBuild({ hero, enemies = [] }: Props) {
   const items = useItemConstants();
   const popularity = useItemPopularity(hero.id);
+  const stats = useStats();
 
   const heroPositions = positionsOf(shortName(hero.name));
-  // По умолчанию — основная позиция героя; «Все» показывает закуп целиком.
   const [position, setPosition] = useState<Position | null>(heroPositions[0] ?? null);
   const [openItem, setOpenItem] = useState<ItemConstant | null>(null);
 
@@ -40,10 +37,26 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
   const counters = enemies.length ? counterItems(enemyShort, enemies.map((e) => e.localized_name)) : [];
   const threats = enemies.length ? draftThreats(enemyShort) : [];
 
+  // Старт — это танго, ветки и квеллинг. Фильтр «целых предметов» здесь
+  // неуместен: он выбрасывал ровно то, что на старте и покупают.
+  const starting = phaseItems(popularity.data, 'start_game_items', byId, TOP_START);
+
+  // Ядро сборки берём из своих данных (финальный инвентарь по матчам Steam),
+  // а если снапшота нет — падаем на закуп OpenDota.
+  const own = itemsOf(stats, hero.id)
+    .map((s) => ({ ...s, found: byId?.get(s.id) }))
+    .filter((s) => isWholeItem(s.found?.key ?? '', s.found?.item))
+    .filter((s) => position === null || fitsPosition(s.found?.key ?? '', position))
+    .slice(0, TOP_CORE);
+
+  const fallbackCore = own.length
+    ? []
+    : ['mid_game_items', 'late_game_items'].flatMap((k) =>
+        phaseItems(popularity.data, k as keyof ItemPopularity, byId, TOP_CORE, position),
+      );
+
   return (
     <div className="build">
-      {/* Этот блок ценнее популярного закупа: такого нигде больше не посмотреть,
-          поэтому он идёт первым и выделен акцентной рамкой. */}
       {enemies.length > 0 && (
         <section className="counter-build">
           <h4>Against Enemy Draft</h4>
@@ -85,16 +98,10 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
         </section>
       )}
 
-      <h4>Item Build</h4>
-
       {heroPositions.length > 0 && (
         <div className="chips chips-sm">
           {heroPositions.map((p) => (
-            <button
-              key={p}
-              className={`chip${position === p ? ' is-on' : ''}`}
-              onClick={() => setPosition(p)}
-            >
+            <button key={p} className={`chip${position === p ? ' is-on' : ''}`} onClick={() => setPosition(p)}>
               {POSITION_LABEL[p]}
             </button>
           ))}
@@ -107,39 +114,89 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
       {popularity.loading && <p className="muted small">Loading items…</p>}
       {popularity.error && <p className="error small">{popularity.error}</p>}
 
-      {popularity.data &&
-        PHASES.map(({ key, label }) => {
-          // Компоненты отсеиваем всегда, а при выбранной позиции оставляем только
-          // то, что на ней собирают: разбивки по позициям в API нет, это фильтр.
-          const entries = Object.entries(popularity.data![key] ?? {})
-            .map(([id, count]) => ({ id: Number(id), count: count as number }))
-            .sort((a, b) => b.count - a.count)
-            .map((e) => ({ ...e, found: byId?.get(e.id) }))
-            .filter((e) => isWholeItem(e.found?.key ?? '', e.found?.item))
-            .filter((e) => position === null || fitsPosition(e.found?.key ?? '', position))
-            .slice(0, TOP_PER_PHASE);
-          if (entries.length === 0) return null;
-          return (
-            <section key={key} className="phase">
-              <p className="phase-label">{label}</p>
-              <div className="item-row">
-                {entries.map(({ id, found }) => (
-                  <ItemIcon key={id} item={found?.item} fallbackName={`#${id}`} onOpen={setOpenItem} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
-
-      {position !== null && (
-        <p className="build-note">
-          {POSITION_LABEL[position]} build — the hero's overall item stats filtered to what this
-          position actually buys. OpenDota does not publish per-position data.
-        </p>
+      {starting.length > 0 && (
+        <section className="phase">
+          <h4>Starting Items</h4>
+          <div className="item-row">
+            {starting.map((e) => (
+              <ItemIcon key={e.id} item={e.found?.item} fallbackName={`#${e.id}`} onOpen={setOpenItem} />
+            ))}
+          </div>
+        </section>
       )}
+
+      <section className="phase">
+        <h4>
+          Core Items
+          {own.length > 0 && <span className="section-count">win rate</span>}
+        </h4>
+        {own.length > 0 ? (
+          <div className="item-row">
+            {own.map((s) => (
+              <ItemIcon
+                key={s.id}
+                item={s.found?.item}
+                fallbackName={`#${s.id}`}
+                caption={s.games >= MIN_ITEM_GAMES ? `${s.winrate.toFixed(0)}%` : `${s.pickRate.toFixed(0)}%`}
+                captionTone={s.games >= MIN_ITEM_GAMES ? (s.winrate >= 50 ? 'pos' : 'neg') : undefined}
+                title={
+                  s.games >= MIN_ITEM_GAMES
+                    ? `${s.found?.item.dname ?? ''} — ${s.winrate.toFixed(1)}% win rate over ${s.games.toLocaleString('en')} games`
+                    : `${s.found?.item.dname ?? ''} — in ${s.pickRate.toFixed(0)}% of builds (${s.games} games, too few for a win rate)`
+                }
+                onOpen={setOpenItem}
+              />
+            ))}
+          </div>
+        ) : fallbackCore.length > 0 ? (
+          <div className="item-row">
+            {fallbackCore.map((e) => (
+              <ItemIcon key={e.id} item={e.found?.item} fallbackName={`#${e.id}`} onOpen={setOpenItem} />
+            ))}
+          </div>
+        ) : (
+          <p className="muted small">No item data yet.</p>
+        )}
+      </section>
+
+      <p className="build-note">
+        {own.length > 0
+          ? `Core items from ${stats?.matches.toLocaleString('en')} collected matches. Numbers are win rate with the item, or build share where the sample is still small.`
+          : 'Core items from OpenDota purchase stats.'}
+        {position !== null && ` Filtered for ${POSITION_LABEL[position]}.`}
+      </p>
+
       {openItem && <ItemDetails item={openItem} onClose={() => setOpenItem(null)} />}
     </div>
   );
+}
+
+interface PhaseEntry {
+  id: number;
+  found?: { key: string; item: ItemConstant };
+}
+
+/** Топ предметов фазы из статистики закупа OpenDota. */
+function phaseItems(
+  data: ItemPopularity | null,
+  key: keyof ItemPopularity,
+  byId: Map<number, { key: string; item: ItemConstant }> | undefined,
+  limit: number,
+  position?: Position | null,
+): PhaseEntry[] {
+  if (!data) return [];
+  return Object.entries(data[key] ?? {})
+    .map(([id, count]) => ({ id: Number(id), count: count as number }))
+    .sort((a, b) => b.count - a.count)
+    .map((e) => ({ id: e.id, found: byId?.get(e.id) }))
+    .filter((e) => {
+      if (!e.found) return false;
+      // На старте компоненты и расходники — это и есть сборка, их не режем.
+      if (key === 'start_game_items') return true;
+      if (!isWholeItem(e.found.key, e.found.item)) return false;
+      return position == null || fitsPosition(e.found.key, position);
+    })
+    .slice(0, limit);
 }
 
 function lookup(byKey: Record<string, ItemConstant> | undefined, key: string): ItemConstant | undefined {
