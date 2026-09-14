@@ -68,6 +68,8 @@ export interface Suggestion {
   counterScore: number;
   synergyScore: number;
   metaScore: number;
+  /** Суммарное число игр во всех учтённых матчапах — мера доверия к counterScore. */
+  counterSample: number;
   counters: CounterBreakdown[];
   synergies: SynergyBreakdown[];
   roleNote?: string;

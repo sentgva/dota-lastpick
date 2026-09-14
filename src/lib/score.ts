@@ -17,6 +17,23 @@ export const DEFAULT_WEIGHTS: Weights = { counter: 1, synergy: 0.5, meta: 0.8 };
  */
 const SHRINK = 300;
 
+/**
+ * Погрешность винрейта при данном числе игр, п.п. (95% доверительный интервал
+ * для доли около 50%). При 34 играх это ±17 п.п. — то есть цифра почти ничего
+ * не значит; матчапы OpenDota считаются по малой выборке распарсенных матчей.
+ */
+export function marginOfError(games: number): number {
+  if (games <= 0) return 50;
+  return 1.96 * Math.sqrt(0.25 / games) * 100;
+}
+
+/** Грубая градация доверия к выборке — для подписи в интерфейсе. */
+export function sampleQuality(games: number): 'low' | 'medium' | 'high' {
+  if (games < 200) return 'low';
+  if (games < 1000) return 'medium';
+  return 'high';
+}
+
 /** Базовый винрейт героя в выбранной скобке ранга, %. */
 export function baseWinrate(hero: Hero, bracket: Bracket | 'all'): number {
   let picks = 0;
@@ -131,6 +148,7 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
     const counterScore = counters.length
       ? counters.reduce((s, c) => s + c.advantage, 0) / counters.length
       : 0;
+    const counterSample = counters.reduce((s, c) => s + c.games, 0);
 
     // 2. Синергия: курируемые комбо + закрытие ролевых дыр.
     const synergies: SynergyBreakdown[] = [];
@@ -168,6 +186,7 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
       counterScore,
       synergyScore,
       metaScore,
+      counterSample,
       counters: counters.sort((a, b) => b.advantage - a.advantage),
       synergies: synergies.sort((a, b) => b.value - a.value),
       roleNote: roleNotes.length ? roleNotes.join(', ') : undefined,

@@ -141,3 +141,33 @@ select, .search, input[type='range'] {
 .tag { background: var(--enemy); border-radius: 4px; padding: 1px 5px; }
 .reasons { margin: 8px 0 0; padding-left: 16px; font-size: 11px; color: var(--muted); }
 .results { margin-top: 16px; }
+
+/* Надёжность выборки: матчапы OpenDota часто считаются по десяткам игр,
+   поэтому объём и погрешность показываем прямо в разборе. */
+.sample-note { font-size: 11px; margin: 0 0 6px; color: var(--muted); }
+.sample-note.sample-low { color: #e0a35a; }
+.breakdown-wide li {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 8px;
+  align-items: baseline;
+}
+.breakdown-wide li.is-weak { opacity: 0.55; }
+.cr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-wr { font-variant-numeric: tabular-nums; }
+.cr-moe { color: var(--muted); font-size: 10px; }
+.cr-games { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.cr-adv { font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
+.warn-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: #e0a35a;
+  color: #17212b;
+  font-size: 9px;
+  font-weight: 700;
+  vertical-align: middle;
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { Hero, Suggestion } from '../types';
+import type { CounterBreakdown, Hero, Suggestion } from '../types';
 import { heroImg } from '../api/opendota';
+import { marginOfError, sampleQuality } from '../lib/score';
 import { HeroBuild } from './HeroBuild';
 
 interface Props {
@@ -9,9 +10,18 @@ interface Props {
   enemies: Hero[];
 }
 
+const QUALITY_LABEL: Record<'low' | 'medium' | 'high', string> = {
+  low: 'мало данных',
+  medium: 'данных средне',
+  high: 'данных достаточно',
+};
+
 export function SuggestionCard({ suggestion, rank, enemies }: Props) {
   const [open, setOpen] = useState(false);
-  const { hero, score, counterScore, synergyScore, metaScore, counters, synergies, roleNote } = suggestion;
+  const { hero, score, counterScore, synergyScore, metaScore, counterSample, counters, synergies, roleNote } =
+    suggestion;
+
+  const quality = sampleQuality(counterSample);
 
   return (
     <div className="card">
@@ -26,7 +36,7 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
       </button>
 
       <div className="bars">
-        <Bar label="Контрпик" value={counterScore} />
+        <Bar label="Контрпик" value={counterScore} quality={quality} />
         <Bar label="Синергия" value={synergyScore} />
         <Bar label="Мета" value={metaScore} />
       </div>
@@ -38,14 +48,13 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
           {counters.length > 0 && (
             <>
               <h4>Против кого работает</h4>
-              <ul className="breakdown">
+              <p className={`sample-note sample-${quality}`}>
+                Выборка {counterSample.toLocaleString('ru')} игр · {QUALITY_LABEL[quality]}
+                {quality === 'low' && ' — эти проценты почти не отличимы от случайных'}
+              </p>
+              <ul className="breakdown breakdown-wide">
                 {counters.map((c) => (
-                  <li key={c.enemy.id}>
-                    <span>{c.enemy.localized_name}</span>
-                    <span className={c.advantage >= 0 ? 'pos' : 'neg'}>
-                      {c.winrate.toFixed(1)}% · {fmt(c.advantage)}
-                    </span>
-                  </li>
+                  <CounterRow key={c.enemy.id} counter={c} />
                 ))}
               </ul>
             </>
@@ -72,12 +81,40 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
   );
 }
 
-function Bar({ label, value }: { label: string; value: number }) {
+/** Строка разбора: винрейт против врага, его погрешность и итоговое преимущество. */
+function CounterRow({ counter }: { counter: CounterBreakdown }) {
+  const moe = marginOfError(counter.games);
+  const weak = sampleQuality(counter.games) === 'low';
+  return (
+    <li className={weak ? 'is-weak' : undefined}>
+      <span className="cr-name">{counter.enemy.localized_name}</span>
+      <span className="cr-wr">
+        {counter.winrate.toFixed(1)}%
+        <span className="cr-moe"> ±{moe.toFixed(1)}</span>
+      </span>
+      <span className="cr-games">{counter.games} игр</span>
+      <span className={`cr-adv ${counter.advantage >= 0 ? 'pos' : 'neg'}`}>{fmt(counter.advantage)}</span>
+    </li>
+  );
+}
+
+function Bar({
+  label,
+  value,
+  quality,
+}: {
+  label: string;
+  value: number;
+  quality?: 'low' | 'medium' | 'high';
+}) {
   // Шкала подобрана под типичный разброс: ±8 покрывает почти все значения.
   const width = Math.min(100, Math.abs(value) * 12.5);
   return (
     <div className="bar">
-      <span className="bar-label">{label}</span>
+      <span className="bar-label">
+        {label}
+        {quality === 'low' && <span className="warn-dot" title="мало данных для надёжного вывода">!</span>}
+      </span>
       <div className="bar-track">
         <div
           className={`bar-fill ${value >= 0 ? 'pos' : 'neg'}`}
