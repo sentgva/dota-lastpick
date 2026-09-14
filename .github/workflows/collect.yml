@@ -1,0 +1,42 @@
+name: Collect match stats
+
+# Данные копятся сами: каждый прогон добавляет матчи к снапшоту.
+on:
+  schedule:
+    - cron: '17 3 * * *'   # ежедневно ночью
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: 'Сколько запросов к Steam (100 матчей на запрос)'
+        default: '1500'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Collect
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+        run: node scripts/collect.mjs --source=steam --requests=${{ inputs.requests || 1500 }}
+
+      - name: Commit snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/stats.json
+          git diff --staged --quiet || git commit -m "Обновить снапшот статистики [skip ci]"
+          git push

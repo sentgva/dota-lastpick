@@ -7,6 +7,7 @@ import {
   fetchItemPopularity,
   fetchMatchups,
 } from '../api/opendota';
+import { loadStats, type StatsSnapshot } from '../api/stats';
 
 export interface Async<T> {
   data: T | null;
@@ -131,4 +132,20 @@ export function useItemPopularity(heroId: number | null): Async<ItemPopularity> 
   }, [heroId]);
 
   return state;
+}
+
+/**
+ * Свой снапшот статистики. Его может не быть (репозиторий без собранных данных) —
+ * тогда приложение работает на матчапах OpenDota, просто менее точно.
+ */
+export function useStats(): StatsSnapshot | null {
+  const [stats, setStats] = useState<StatsSnapshot | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadStats().then((s) => alive && setStats(s));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return stats;
 }

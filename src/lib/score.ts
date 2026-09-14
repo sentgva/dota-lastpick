@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import { comboFor, shortName } from '../data/synergy';
 import { playsPosition, type Position } from '../data/positions';
+import { matchupOf, synergyOf, type StatsSnapshot } from '../api/stats';
 
 export const DEFAULT_WEIGHTS: Weights = { counter: 1, synergy: 0.5, meta: 0.8 };
 
@@ -17,6 +18,9 @@ export const DEFAULT_WEIGHTS: Weights = { counter: 1, synergy: 0.5, meta: 0.8 };
  * пропорционально режется, чтобы редкие пары не выносили топ.
  */
 const SHRINK = 300;
+
+/** Ниже этого числа игр измеренная синергия пары — шум, и мы её не показываем. */
+const MIN_SYNERGY_GAMES = 150;
 
 /**
  * Погрешность винрейта при данном числе игр, п.п. (95% доверительный интервал
@@ -67,11 +71,11 @@ export function pickCount(hero: Hero, bracket: Bracket | 'all'): number {
 function advantage(
   candidate: Hero,
   enemy: Hero,
-  matchup: Matchup,
+  games: number,
+  candidateWins: number,
   bracket: Bracket | 'all',
 ): CounterBreakdown {
-  const games = matchup.games_played;
-  const winrate = games > 0 ? (1 - matchup.wins / games) * 100 : 50;
+  const winrate = games > 0 ? (candidateWins / games) * 100 : 50;
   const expected = 50 + (baseWinrate(candidate, bracket) - baseWinrate(enemy, bracket)) / 2;
   const confidence = games / (games + SHRINK);
   return {
@@ -117,8 +121,10 @@ export interface ScoreInput {
   heroes: Hero[];
   enemies: Hero[];
   allies: Hero[];
-  /** enemy.id -> его матчапы */
+  /** enemy.id -> его матчапы из OpenDota (запасной источник) */
   matchups: Map<number, Matchup[]>;
+  /** Свой снапшот по сырым матчам — точнее OpenDota на два порядка. */
+  stats?: StatsSnapshot | null;
   bracket: Bracket | 'all';
   weights: Weights;
   /** Необязательный фильтр: показывать только героев этой позиции. */
@@ -126,7 +132,7 @@ export interface ScoreInput {
 }
 
 export function buildSuggestions(input: ScoreInput): Suggestion[] {
-  const { heroes, enemies, allies, matchups, bracket, weights, positionFilter } = input;
+  const { heroes, enemies, allies, matchups, stats, bracket, weights, positionFilter } = input;
 
   const taken = new Set([...enemies, ...allies].map((h) => h.id));
   const gaps = roleGaps(allies);
@@ -144,11 +150,18 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
     if (positionFilter && !playsPosition(shortName(candidate.name), positionFilter)) continue;
 
     // 1. Контрпик: среднее преимущество против выбранных врагов.
+    // Свой снапшот в приоритете, OpenDota — запасной вариант.
     const counters: CounterBreakdown[] = [];
     for (const enemy of enemies) {
+      const own = matchupOf(stats ?? null, candidate.id, enemy.id);
+      if (own && own.games > 0) {
+        counters.push(advantage(candidate, enemy, own.games, own.wins, bracket));
+        continue;
+      }
       const m = byEnemy.get(enemy.id)?.get(candidate.id);
       if (!m) continue;
-      counters.push(advantage(candidate, enemy, m, bracket));
+      // В матчапах OpenDota wins — победы ВРАГА, поэтому переворачиваем.
+      counters.push(advantage(candidate, enemy, m.games_played, m.games_played - m.wins, bracket));
     }
     const counterScore = counters.length
       ? counters.reduce((s, c) => s + c.advantage, 0) / counters.length
@@ -160,9 +173,24 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
     let comboSum = 0;
     for (const ally of allies) {
       const combo = comboFor(shortName(candidate.name), shortName(ally.name));
-      if (!combo) continue;
-      comboSum += combo.value;
-      synergies.push({ ally, value: combo.value, reason: combo.reason });
+      if (combo) {
+        comboSum += combo.value;
+        synergies.push({ ally, value: combo.value, reason: combo.reason });
+        continue;
+      }
+      // Измеренная синергия: насколько пара выигрывает чаще ожидаемого.
+      const measured = synergyOf(stats ?? null, candidate.id, ally.id);
+      if (!measured || measured.games < MIN_SYNERGY_GAMES) continue;
+      const winrate = (measured.wins / measured.games) * 100;
+      const expected = (baseWinrate(candidate, bracket) + baseWinrate(ally, bracket)) / 2;
+      const edge = (winrate - expected) * (measured.games / (measured.games + SHRINK));
+      if (Math.abs(edge) < 0.3) continue;
+      synergies.push({
+        ally,
+        value: edge,
+        reason: `${winrate.toFixed(1)}% together over ${measured.games.toLocaleString('en')} games`,
+      });
+      comboSum += edge;
     }
 
     let roleBonus = 0;

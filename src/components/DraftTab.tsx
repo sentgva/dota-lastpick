@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Bracket, Hero, Weights } from '../types';
-import { useMatchups } from '../hooks/useDota';
+import { useMatchups, useStats } from '../hooks/useDota';
 import { buildSuggestions, DEFAULT_WEIGHTS } from '../lib/score';
 import { HeroPicker } from './HeroPicker';
 import { HeroSlot, LastPickSlot } from './HeroSlot';
@@ -55,6 +55,7 @@ export function DraftTab({
 
   const enemyIds = pickedEnemies.map((h) => h.id);
   const matchups = useMatchups(enemyIds);
+  const stats = useStats();
 
   const suggestions = useMemo(() => {
     if (pickedEnemies.length === 0 && pickedAllies.length === 0) return [];
@@ -63,6 +64,7 @@ export function DraftTab({
       enemies: pickedEnemies,
       allies: pickedAllies,
       matchups: matchups.data ?? new Map(),
+      stats,
       bracket,
       weights,
       positionFilter,
@@ -73,6 +75,7 @@ export function DraftTab({
     enemyIds.join(','),
     pickedAllies.map((h) => h.id).join(','),
     matchups.data,
+    stats,
     bracket,
     weights,
     positionFilter,
