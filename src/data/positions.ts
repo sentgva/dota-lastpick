@@ -12,7 +12,7 @@ export type Position = 1 | 2 | 3 | 4 | 5;
 export const POSITION_LABEL: Record<Position, string> = {
   1: 'Carry',
   2: 'Mid',
-  3: 'Hard',
+  3: 'Offlane',
   4: 'Support',
   5: 'Hard Support',
 };
