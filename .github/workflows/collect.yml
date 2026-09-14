@@ -7,8 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       requests:
-        description: 'Сколько запросов к Steam (100 матчей на запрос)'
+        description: 'Запросов к Steam за раунд (100 матчей на запрос)'
         default: '1500'
+      ask:
+        description: 'Сколько минут ждать кнопку «Собрать ещё» (0 — не спрашивать)'
+        default: '10'
 
 permissions:
   contents: write
@@ -31,7 +34,10 @@ jobs:
       - name: Collect
         env:
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-        run: node scripts/collect.mjs --source=steam --requests=${{ inputs.requests || 1500 }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          node scripts/collect.mjs             --source=steam             --requests=${{ inputs.requests || 1500 }}             --ask=${{ inputs.ask || 10 }}
 
       - name: Commit snapshot
         run: |

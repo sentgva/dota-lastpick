@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sendReport, waitForContinue, telegramReady } from './telegram.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = resolve(ROOT, 'public/stats.json');
@@ -38,6 +39,8 @@ const args = Object.fromEntries(
 );
 
 const SOURCE = args.source ?? 'opendota';
+/** Сколько минут ждать нажатия «Собрать ещё» после отчёта. 0 — не спрашивать. */
+const ASK_MINUTES = Number(args.ask ?? 0);
 const REQUESTS = Number(args.requests ?? 100);
 /** Steam отдаёт 429 при частых запросах, поэтому держим паузу между ними. */
 const DELAY_MS = Number(args.delay ?? 1100);
@@ -250,8 +253,6 @@ async function* fromSteam(startCursor) {
 }
 
 const snap = loadSnapshot();
-const before = snap.matches;
-const t0 = Date.now();
 
 /** Длинный прогон не должен пропадать при обрыве — пишем снапшот по ходу. */
 function save() {
@@ -265,36 +266,84 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-const stream = SOURCE === 'steam' ? fromSteam(snap.cursor?.steam) : fromOpenDota(snap.cursor?.opendota);
-let taken = 0;
-for await (const item of stream) {
-  if (item.cursor !== undefined) {
-    snap.cursor[SOURCE] = item.cursor;
-    continue;
-  }
-  if (ingest(snap, item)) taken += 1;
-  if (taken > 0 && taken % 20000 === 0) {
-    save();
-    console.log(`  … ${snap.matches.toLocaleString('ru')} матчей, снапшот сохранён`);
-  }
+/** Сводка по снапшоту для отчёта. */
+function summary(snap) {
+  const games = Object.values(snap.matchup).flatMap((row) => Object.values(row).map((c) => c[0]));
+  games.sort((a, b) => a - b);
+  const median = games.length ? games[Math.floor(games.length / 2)] : 0;
+  // Погрешность винрейта при медианной выборке, п.п.
+  const moe = median > 0 ? 1.96 * Math.sqrt(0.25 / median) * 100 : 0;
+  const withVs = Object.values(snap.vsItems ?? {}).filter((e) => e.games >= 200).length;
+  return { median, moe, withVs };
 }
 
-snap.updated = new Date().toISOString();
-snap.sources[SOURCE] = (snap.sources[SOURCE] ?? 0) + taken;
+async function runRound() {
+  const before = snap.matches;
+  const stream = SOURCE === 'steam' ? fromSteam(snap.cursor?.steam) : fromOpenDota(snap.cursor?.opendota);
+  let taken = 0;
+  for await (const item of stream) {
+    if (item.cursor !== undefined) {
+      snap.cursor[SOURCE] = item.cursor;
+      continue;
+    }
+    if (ingest(snap, item)) taken += 1;
+    if (taken > 0 && taken % 20000 === 0) {
+      save();
+      console.log(`  … ${snap.matches.toLocaleString('ru')} матчей, снапшот сохранён`);
+    }
+  }
+  snap.sources[SOURCE] = (snap.sources[SOURCE] ?? 0) + taken;
+  save();
+  return { taken, before };
+}
 
-const games = Object.values(snap.matchup).flatMap((row) => Object.values(row).map((c) => c[0]));
-const avg = games.length ? games.reduce((a, b) => a + b, 0) / games.length : 0;
+const t0 = Date.now();
+let round = 0;
+let totalTaken = 0;
 
-mkdirSync(dirname(OUT), { recursive: true });
-writeFileSync(OUT, JSON.stringify(snap));
+for (;;) {
+  round += 1;
+  const { taken } = await runRound();
+  totalTaken += taken;
 
-const secs = (Date.now() - t0) / 1000;
-const kb = (readFileSync(OUT).length / 1024).toFixed(0);
-console.log(`добавлено матчей: ${taken.toLocaleString('ru')} за ${secs.toFixed(0)} с`);
-console.log(`всего в снапшоте: ${snap.matches.toLocaleString('ru')} (было ${before.toLocaleString('ru')})`);
+  const { median, moe, withVs } = summary(snap);
+  const mins = ((Date.now() - t0) / 60000).toFixed(0);
+  const report =
+    `<b>Сбор матчей</b>
+
+` +
+    `Добавлено: <b>${taken.toLocaleString('ru')}</b>${round > 1 ? ` (раунд ${round})` : ''}
+` +
+    `Всего в базе: <b>${snap.matches.toLocaleString('ru')}</b>
+` +
+    `Игр на пару героев: <b>${median}</b> — погрешность ±${moe.toFixed(1)} п.п.
+` +
+    `Героев с данными по контрпредметам: <b>${withVs}</b> из 127
+` +
+    `Время: ${mins} мин`;
+
+  console.log(report.replace(/<[^>]+>/g, ''));
+
+  if (!telegramReady || ASK_MINUTES <= 0 || taken === 0) {
+    if (telegramReady) await sendReport(report, { withButton: false });
+    break;
+  }
+
+  const messageId = await sendReport(report);
+  console.log(`отчёт отправлен, жду решения ${ASK_MINUTES} мин…`);
+  const again = await waitForContinue(messageId, ASK_MINUTES * 60);
+  if (!again) {
+    console.log('продления не было — заканчиваем');
+    break;
+  }
+  console.log('продлеваем сбор');
+}
+
 const itemRows = Object.values(snap.items ?? {}).reduce((n, row) => n + Object.keys(row).length, 0);
-console.log(`пар в матрице: ${Object.keys(snap.matchup).length} героев, в среднем ${avg.toFixed(0)} игр на пару`);
 const vsRows = Object.values(snap.vsItems ?? {}).reduce((n, e) => n + Object.keys(e.items).length, 0);
-console.log(`статистика предметов: ${Object.keys(snap.items ?? {}).length} героев, ${itemRows.toLocaleString('ru')} записей`);
-console.log(`предметы против героев: ${Object.keys(snap.vsItems ?? {}).length} героев, ${vsRows.toLocaleString('ru')} записей`);
+const kb = (readFileSync(OUT).length / 1024).toFixed(0);
+console.log(`
+итого добавлено: ${totalTaken.toLocaleString('ru')} за ${round} раунд(ов)`);
+console.log(`в снапшоте: ${snap.matches.toLocaleString('ru')} матчей`);
+console.log(`предметы: ${itemRows.toLocaleString('ru')} записей | против героев: ${vsRows.toLocaleString('ru')}`);
 console.log(`файл: ${OUT} — ${kb} КБ`);
