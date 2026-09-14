@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { CounterBreakdown, Hero, Suggestion } from '../types';
 import { heroImg } from '../api/opendota';
 import { marginOfError, sampleQuality } from '../lib/score';
+import { POSITION_LABEL, positionsOf } from '../data/positions';
+import { shortName } from '../data/synergy';
 import { HeroBuild } from './HeroBuild';
 
 interface Props {
@@ -30,7 +32,7 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
         <img src={heroImg(hero)} alt={hero.localized_name} />
         <span className="card-title">
           <strong>{hero.localized_name}</strong>
-          <span>{hero.roles.slice(0, 3).join(' · ')}</span>
+          <span>{positionLabels(hero.name)}</span>
         </span>
         <span className={`score ${score >= 0 ? 'pos' : 'neg'}`}>{fmt(score)}</span>
       </button>
@@ -137,4 +139,10 @@ function Bar({
 /** Минус пишем настоящим знаком, а не дефисом — так колонка чисел читается ровнее. */
 function fmt(n: number): string {
   return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(2);
+}
+
+/** Позиции героя вместо ролей OpenDota: «Керри · Мид» понятнее, чем «Carry · Durable». */
+function positionLabels(heroName: string): string {
+  const list = positionsOf(shortName(heroName));
+  return list.length ? list.map((p) => POSITION_LABEL[p]).join(' · ') : 'позиция не указана';
 }

@@ -82,16 +82,20 @@ function advantage(
   };
 }
 
-/** Ролевой профиль команды союзников — чего не хватает. */
-function roleGaps(allies: Hero[]): { role: string; value: number }[] {
+/**
+ * Ролевой профиль команды союзников — чего не хватает.
+ * Роли берём из OpenDota, но в подсказку пишем по-русски: английские
+ * Durable/Disabler в интерфейсе ничего не говорят.
+ */
+function roleGaps(allies: Hero[]): { role: string; label: string; value: number }[] {
   if (allies.length === 0) return [];
   const count = (role: string) => allies.filter((a) => a.roles.includes(role)).length;
-  const gaps: { role: string; value: number }[] = [];
-  if (count('Carry') === 0) gaps.push({ role: 'Carry', value: 4 });
-  if (count('Support') < 2) gaps.push({ role: 'Support', value: 3 });
-  if (count('Initiator') === 0) gaps.push({ role: 'Initiator', value: 3 });
-  if (count('Disabler') === 0) gaps.push({ role: 'Disabler', value: 2 });
-  if (count('Durable') === 0) gaps.push({ role: 'Durable', value: 1 });
+  const gaps: { role: string; label: string; value: number }[] = [];
+  if (count('Carry') === 0) gaps.push({ role: 'Carry', label: 'керри', value: 4 });
+  if (count('Support') < 2) gaps.push({ role: 'Support', label: 'саппорта', value: 3 });
+  if (count('Initiator') === 0) gaps.push({ role: 'Initiator', label: 'инициатора', value: 3 });
+  if (count('Disabler') === 0) gaps.push({ role: 'Disabler', label: 'контроля', value: 2 });
+  if (count('Durable') === 0) gaps.push({ role: 'Durable', label: 'живучего героя', value: 1 });
   return gaps;
 }
 
@@ -166,7 +170,7 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
     for (const gap of gaps) {
       if (candidate.roles.includes(gap.role)) {
         roleBonus += gap.value;
-        roleNotes.push(`закрывает роль ${gap.role}`);
+        roleNotes.push(`в команде не хватает ${gap.label}`);
       }
     }
     const dmg = damageGap(allies, candidate);
