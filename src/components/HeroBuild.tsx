@@ -3,6 +3,7 @@ import { useItemConstants, useItemPopularity } from '../hooks/useDota';
 import { ItemIcon } from './ItemIcon';
 import { counterItems, draftThreats } from '../data/itemCounters';
 import { shortName } from '../data/synergy';
+import { isWholeItem } from '../data/wholeItems';
 
 const PHASES: { key: keyof ItemPopularity; label: string }[] = [
   { key: 'start_game_items', label: 'Старт' },
@@ -84,9 +85,13 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
 
       {popularity.data &&
         PHASES.map(({ key, label }) => {
+          // Компоненты (палочки, Ultimate Orb, Broadsword) отсеиваем — в билде
+          // интересны только собранные предметы.
           const entries = Object.entries(popularity.data![key] ?? {})
             .map(([id, count]) => ({ id: Number(id), count: count as number }))
             .sort((a, b) => b.count - a.count)
+            .map((e) => ({ ...e, found: byId?.get(e.id) }))
+            .filter((e) => isWholeItem(e.found?.key ?? '', e.found?.item))
             .slice(0, TOP_PER_PHASE);
           if (entries.length === 0) return null;
           return (
@@ -95,17 +100,9 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
                 {label}
               </p>
               <div className="item-row">
-                {entries.map(({ id, count }) => {
-                  const found = byId?.get(id);
-                  return (
-                    <ItemIcon
-                      key={id}
-                      item={found?.item}
-                      fallbackName={`#${id}`}
-                      caption={formatCount(count)}
-                    />
-                  );
-                })}
+                {entries.map(({ id, count, found }) => (
+                  <ItemIcon key={id} item={found?.item} fallbackName={`#${id}`} caption={formatCount(count)} />
+                ))}
               </div>
             </section>
           );

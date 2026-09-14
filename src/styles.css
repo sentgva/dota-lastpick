@@ -574,3 +574,28 @@ h4 { margin: 12px 0 6px; }
   margin-top: 10px;
 }
 .refreshing span { margin-left: auto; font-size: 11px; color: var(--neutral-400); }
+
+/* Фильтр по ролям на вкладке «Билды» — герой обычно в нескольких ролях сразу */
+.role-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 0 8px;
+  -webkit-overflow-scrolling: touch;
+}
+.chip {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--divider);
+  background: none;
+  color: var(--neutral-400);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip.is-on {
+  border-color: var(--accent);
+  color: var(--accent-200);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}

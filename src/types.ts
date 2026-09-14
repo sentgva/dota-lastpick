@@ -38,7 +38,10 @@ export interface ItemConstant {
   img: string;
   dname?: string;
   cost?: number | null;
+  /** component | consumable | common | rare | epic | artifact | secret_shop */
   qual?: string;
+  /** Из чего собирается. Пусто у базовых предметов и компонентов. */
+  components?: string[] | null;
 }
 
 /** Скобка ранга OpenDota: 1 = Herald … 8 = Immortal. */

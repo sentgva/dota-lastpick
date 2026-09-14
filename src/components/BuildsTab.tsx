@@ -11,18 +11,23 @@ interface Props {
   enemies: Hero[];
 }
 
+/** Роли OpenDota в порядке полезности для драфта. */
+const ROLES = ['Carry', 'Support', 'Initiator', 'Disabler', 'Nuker', 'Durable', 'Escape', 'Pusher', 'Jungler'];
+
 export function BuildsTab({ heroes, bracket, enemies }: Props) {
   const [query, setQuery] = useState('');
+  const [role, setRole] = useState<string | null>(null);
   const [selected, setSelected] = useState<Hero | null>(null);
   const [useDraft, setUseDraft] = useState(true);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = q
-      ? heroes.filter((h) => h.localized_name.toLowerCase().includes(q))
-      : [...heroes].sort((a, b) => pickCount(b, bracket) - pickCount(a, bracket));
-    return list;
-  }, [heroes, query, bracket]);
+    let list = heroes;
+    if (q) list = list.filter((h) => h.localized_name.toLowerCase().includes(q));
+    // Герой обычно попадает в несколько ролей, поэтому это фильтр, а не разбиение.
+    if (role) list = list.filter((h) => h.roles.includes(role));
+    return [...list].sort((a, b) => pickCount(b, bracket) - pickCount(a, bracket));
+  }, [heroes, query, role, bracket]);
 
   if (selected) {
     return (
@@ -34,8 +39,9 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
           <img src={heroImg(selected)} alt={selected.localized_name} />
           <div>
             <h2>{selected.localized_name}</h2>
-            <p className="muted small">
-              {selected.roles.join(' · ')} · винрейт {baseWinrate(selected, bracket).toFixed(1)}%
+            <p>{selected.roles.join(' · ')}</p>
+            <p>
+              винрейт <b>{baseWinrate(selected, bracket).toFixed(1)}%</b>
             </p>
           </div>
         </div>
@@ -43,7 +49,11 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
         {enemies.length > 0 && (
           <label className="toggle">
             <input type="checkbox" checked={useDraft} onChange={(e) => setUseDraft(e.target.checked)} />
-            Учитывать драфт соперника ({enemies.map((e) => e.localized_name).join(', ')})
+            <span>
+              Учитывать драфт соперника
+              <br />
+              <span className="muted small">{enemies.map((e) => e.localized_name).join(', ')}</span>
+            </span>
           </label>
         )}
 
@@ -56,10 +66,30 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
     <div className="tab">
       <input
         className="search"
-        placeholder="Поиск героя…"
+        placeholder="Поиск героя"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+
+      <div className="role-chips">
+        <button className={`chip${role === null ? ' is-on' : ''}`} onClick={() => setRole(null)}>
+          Все
+        </button>
+        {ROLES.map((r) => (
+          <button
+            key={r}
+            className={`chip${role === r ? ' is-on' : ''}`}
+            onClick={() => setRole(role === r ? null : r)}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+
+      <div className="picker-hint" style={{ padding: '0 0 8px' }}>
+        {role ? `${role} · ${filtered.length}` : `по популярности · ${filtered.length} героев`}
+      </div>
+
       <div className="hero-grid">
         {filtered.map((hero) => (
           <button key={hero.id} className="hero-cell" onClick={() => setSelected(hero)}>
@@ -68,6 +98,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
           </button>
         ))}
       </div>
+      {filtered.length === 0 && <p className="muted">Ничего не найдено</p>}
     </div>
   );
 }

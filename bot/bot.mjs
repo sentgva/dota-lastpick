@@ -50,8 +50,10 @@ async function call(method, payload) {
 
 /** Кнопка меню рядом с полем ввода — основной вход в приложение. */
 async function setupMenuButton() {
+  // Имя бота видно в шапке мини-приложения, поэтому держим его коротким.
+  await call('setMyName', { name: 'Draft' });
   await call('setChatMenuButton', {
-    menu_button: { type: 'web_app', text: 'Ласт пик', web_app: { url: WEBAPP_URL } },
+    menu_button: { type: 'web_app', text: 'Draft', web_app: { url: WEBAPP_URL } },
   });
   await call('setMyCommands', {
     commands: [{ command: 'start', description: 'Открыть помощник по драфту' }],
