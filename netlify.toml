@@ -1,0 +1,10 @@
+# Netlify подхватывает эти настройки сам — в интерфейсе ничего заполнять не нужно.
+# GitHub Pages оставлен в .github/workflows/deploy.yml как запасной вариант,
+# но домен github.io недоступен из части сетей, поэтому основной хостинг — Netlify.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
