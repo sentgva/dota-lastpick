@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Hero, ItemConstant, ItemPopularity } from '../types';
+import { ItemDetails } from './ItemDetails';
 import { useItemConstants, useItemPopularity } from '../hooks/useDota';
 import { ItemIcon } from './ItemIcon';
 import { counterItems, draftThreats } from '../data/itemCounters';
@@ -30,6 +31,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
   const heroPositions = positionsOf(shortName(hero.name));
   // По умолчанию — основная позиция героя; «Все» показывает закуп целиком.
   const [position, setPosition] = useState<Position | null>(heroPositions[0] ?? null);
+  const [openItem, setOpenItem] = useState<ItemConstant | null>(null);
 
   const byId = items.data?.byId;
   const byKey = items.data?.byKey;
@@ -66,6 +68,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
                     item={lookup(byKey, c.item)}
                     fallbackName={c.item}
                     title={`${c.reasons.join('; ')} — because of ${c.triggeredBy.join(', ')}`}
+                    onOpen={setOpenItem}
                   />
                 ))}
               </div>
@@ -121,7 +124,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
               <p className="phase-label">{label}</p>
               <div className="item-row">
                 {entries.map(({ id, found }) => (
-                  <ItemIcon key={id} item={found?.item} fallbackName={`#${id}`} />
+                  <ItemIcon key={id} item={found?.item} fallbackName={`#${id}`} onOpen={setOpenItem} />
                 ))}
               </div>
             </section>
@@ -134,6 +137,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
           position actually buys. OpenDota does not publish per-position data.
         </p>
       )}
+      {openItem && <ItemDetails item={openItem} onClose={() => setOpenItem(null)} />}
     </div>
   );
 }

@@ -42,6 +42,14 @@ export interface ItemConstant {
   qual?: string;
   /** Из чего собирается. Пусто у базовых предметов и компонентов. */
   components?: string[] | null;
+  /** Статы: display — шаблон вида «+ {value} Strength». */
+  attrib?: { key?: string; display?: string; value?: string | number }[];
+  /** Активные и пассивные эффекты. */
+  abilities?: { type?: string; title?: string; description?: string }[];
+  notes?: string;
+  /** Мана и перезарядка активной способности. */
+  mc?: number | string | false;
+  cd?: number | string | false;
 }
 
 /** Скобка ранга OpenDota: 1 = Herald … 8 = Immortal. */

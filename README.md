@@ -1,161 +1,110 @@
-# Dota 2 Last Pick — Telegram Web App
+# Dota 2 Draft
 
-Помощник по драфту: выбираете 5 героев соперника и 4 своих союзников — приложение
-показывает, кого лучше взять последним пиком, и что покупать против этого драфта.
+Telegram Mini App that answers one question: **who should I take as the last pick?**
 
-## Запуск
+Enter the five enemy heroes and your four allies — the app ranks every remaining hero,
+explains why, and shows what to buy against that draft.
 
-```bash
-npm install
-npm run dev        # локальная разработка, http://localhost:5173
-npm run build      # сборка в dist/ (чистая статика)
-```
+**Live:** https://dota-lastpick.vercel.app
 
-## Как поднять бота — пошагово
+## What it does
 
-**1. Создать бота.** В Telegram напишите [@BotFather](https://t.me/BotFather): `/newbot`,
-имя, username. В ответ придёт токен вида `8123456789:AAH...`.
+- **Last pick suggestions** — every candidate scored against the enemy draft, broken
+  down into counter, synergy and meta.
+- **Sample confidence** — each matchup shows how many games it is based on and the
+  margin of error, so a real edge is distinguishable from noise.
+- **Item builds** — popular purchases per hero, filtered per position, components hidden.
+  Tap an item to see what it does.
+- **Against the enemy draft** — which items this specific lineup demands (detection,
+  healing reduction, break, BKB…) and which enemy triggered each one.
+- **Position filter** — Carry, Mid, Offlane, Support, Hard Support.
 
-**2. Получить HTTPS-адрес.** Telegram не открывает `http://` и не пускает `localhost`,
-поэтому фронтенд должен лежать в интернете по HTTPS.
-
-```bash
-npm run build     # получаем папку dist/
-```
-
-Проект развёрнут на **Vercel** — настройки он берёт из `vercel.json`, сборка
-запускается автоматически при каждом `git push`.
-
-1. <https://vercel.com> → войти через GitHub.
-2. **Add New → Project** → выбрать репозиторий → **Deploy**. Настройки не трогать.
-
-Текущий адрес: <https://dota-lastpick.vercel.app>
-
-Два варианта, которые не подошли и описаны здесь, чтобы не наступить дважды:
-**GitHub Pages** (`.github/workflows/deploy.yml` оставлен в репозитории) — домен
-`github.io` недоступен из некоторых сетей; **Netlify** (`netlify.toml`) — заблокировал
-аккаунт после первого деплоя.
-
-**3. Заполнить `.env`** в корне проекта (скопируйте `.env.example`):
-
-```
-BOT_TOKEN=8123456789:AAH...
-WEBAPP_URL=https://dota-lastpick.vercel.app/
-```
-
-**4. Поставить кнопку меню — один раз:**
-
-```bash
-npm run bot:setup
-```
-
-Команда прописывает кнопку «Ласт пик» и выходит. Кнопка хранится на серверах
-Telegram, поэтому держать процесс запущенным **не нужно** — откройте чат с ботом,
-она уже там. Для личного использования этого достаточно.
-
-Полноценный режим нужен, только если бот должен отвечать на `/start` текстом
-и кнопкой (например, вы дадите его кому-то ещё):
-
-```bash
-npm run bot      # работает, пока запущен процесс
-```
-
-Само приложение от бота не зависит вообще: это статика, её можно открыть и просто
-по ссылке в браузере.
-
-### Обновление приложения
-
-```bash
-git add -A
-git commit -m "что изменилось"
-git push
-```
-
-Vercel пересоберёт и выложит новую версию сам, примерно за минуту. Бота трогать
-не нужно — адрес не меняется.
-
-### Отладка внутри Telegram с живой перезагрузкой
-
-Нужен туннель до `localhost:5173` (в `vite.config.ts` уже стоит `allowedHosts: true`,
-иначе Vite отклонит запросы с чужого хоста):
-
-```bash
-npm run dev
-npx cloudflared tunnel --url http://localhost:5173   # в другом терминале
-```
-
-Полученный HTTPS-адрес подставьте в `WEBAPP_URL` и перезапустите бота.
-
-## Откуда данные
-
-Фронтенд ходит в OpenDota API напрямую из браузера (у них `Access-Control-Allow-Origin: *`),
-поэтому бэкенд не нужен.
-
-| Что | Эндпоинт | Кэш |
-|---|---|---|
-| Герои, винрейты по рангам | `/heroStats` | 24 ч |
-| Матчапы героя | `/heroes/{id}/matchups` | 12 ч |
-| Популярный закуп | `/heroes/{id}/itemPopularity` | 12 ч |
-| Справочник предметов | `/constants/items` | 7 дней |
-
-Лимит без ключа — 60 запросов/мин и 2000/сутки, поэтому всё кэшируется в `localStorage`
-(`src/api/cache.ts`). Ключ OpenDota можно положить в `VITE_OPENDOTA_KEY`, тогда лимиты выше.
-
-## Как считается рекомендация
+## How the score works
 
 `src/lib/score.ts`:
 
 ```
-score = w_counter · контрпик + w_synergy · синергия + w_meta · мета
+score = w_counter · counter + w_synergy · synergy + w_meta · meta
 ```
 
-- **Контрпик** — среднее преимущество кандидата против выбранных врагов. Из сырого
-  винрейта вычитается ожидаемый (по базовым винрейтам обоих героев), иначе сильные
-  герои патча выглядели бы контрпиком вообще ко всему. Редкие пары режутся
-  по объёму выборки: `games / (games + 300)`.
-- **Синергия** — курируемые комбо (`src/data/synergy.ts`) плюс закрытие ролевых дыр
-  команды и недостающего типа урона.
-- **Мета** — отклонение базового винрейта героя от 50% в выбранной скобке ранга.
+**Counter** — average advantage against the picked enemies. The expected win rate
+(derived from both heroes' baselines) is subtracted from the raw one, otherwise every
+strong hero of the patch would look like a counter to everything. Small samples are
+shrunk by `games / (games + 300)`.
 
-Веса настраиваются прямо в интерфейсе (кнопка «Веса»).
+**Synergy** — curated hero combos plus role gaps in your team and missing damage type.
 
-### Ограничение данных, о котором нужно знать
+**Meta** — the hero's baseline win rate in the selected rank bracket.
 
-Матчапы OpenDota считаются только по распарсенным матчам, а это доля процента от всех
-игр. На практике на пару героев приходится **несколько десятков игр**: например, 71 игра
-даёт погрешность винрейта ±11.6 п.п., а 22 игры — ±20.9 п.п. Такие проценты почти
-неотличимы от случайных.
+All three weights are adjustable in the UI.
 
-Поэтому интерфейс показывает объём выборки и погрешность прямо в разборе рекомендации,
-помечает ненадёжные строки и ставит предупреждающий знак у полосы «Контрпик», когда
-данных мало (`marginOfError` и `sampleQuality` в `src/lib/score.ts`). Сжатие
-`games / (games + 300)` защищает от выбросов, но восстановить недостающие данные не может.
+## Data
 
-Надёжной остаётся базовая статистика: `/heroStats` агрегирует 42,9 млн пиков по скобкам
-рангов — на ней строится компонент «Мета».
+The frontend calls OpenDota directly from the browser (they send
+`Access-Control-Allow-Origin: *`), so there is no backend.
 
-Радикальное решение — перейти на STRATZ (у них обрабатываются все матчи плюс есть синергия
-пар). Их API требует аккаунт со 100 публичными матчами и включённой публикацией данных
-матчей в Dota 2.
+| Data | Endpoint | Cache |
+|---|---|---|
+| Heroes, win rates per bracket | `/heroStats` | 24 h |
+| Hero matchups | `/heroes/{id}/matchups` | 12 h |
+| Item purchases | `/heroes/{id}/itemPopularity` | 12 h |
+| Item constants | `/constants/items` | 7 days |
 
-## Что курируется вручную, а не берётся из API
+Rate limit without a key is 60 req/min and 2000/day, so everything is cached in
+`localStorage` (`src/api/cache.ts`). An optional key goes into `VITE_OPENDOTA_KEY`.
 
-У OpenDota нет эндпоинтов для двух вещей, поэтому они лежат в виде правил и
-дополняются руками:
+### Known limitation
 
-- `src/data/synergy.ts` — комбо пар героев (у API есть только «герой против героя»,
-  синергии пар нет).
-- `src/data/itemCounters.ts` — что покупать против конкретных врагов: категории угроз
-  (невидимость, хил, иллюзии, бёрст, контроль…) и точечные правила по героям.
+OpenDota computes matchups only from parsed matches — a fraction of a percent of all
+games. In practice a hero pair has a few dozen games: 71 games means ±11.6 percentage
+points, 22 games means ±20.9. Those numbers are close to noise, which is why the UI
+shows sample size and marks unreliable rows instead of hiding the problem.
 
-## Структура
+Baseline stats are solid — `/heroStats` aggregates ~43M picks across rank brackets.
+
+STRATZ would fix this (full match coverage plus real pair synergy), but their API
+requires an account with 100 public matches.
+
+## Curated data
+
+These have no API and are maintained by hand:
+
+- `src/data/positions.ts` — hero positions 1–5. OpenDota returns only roles like
+  Carry/Durable/Nuker, which do not map to positions.
+- `src/data/synergy.ts` — hero pair combos. The API has hero-vs-hero only.
+- `src/data/itemCounters.ts` — what to buy against specific enemies.
+- `src/data/itemRoles.ts` — which items suit which position, used to filter builds.
+
+## Development
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # static output in dist/
+```
+
+Vercel rebuilds on every push to `main` (`vercel.json`).
+
+## Telegram bot
+
+The bot only opens the Mini App — the app itself is static and works standalone.
+
+```bash
+cp .env.example .env   # BOT_TOKEN from @BotFather, WEBAPP_URL (https)
+npm run bot:setup      # registers the menu button once and exits
+```
+
+The menu button lives on Telegram's servers, so nothing has to keep running.
+`npm run bot` additionally replies to `/start` while the process is up.
+
+## Structure
 
 ```
 src/
-  api/          OpenDota-клиент и кэш поверх localStorage
-  data/         курируемые правила: комбо и предметы-контры
-  hooks/        загрузка данных
-  lib/score.ts  алгоритм рекомендаций
-  components/   UI: драфт, пикер, карточки, билды
-bot/bot.mjs     бот на чистом fetch, без зависимостей
+  api/          OpenDota client, localStorage cache
+  data/         curated rules: positions, combos, counter items, item roles
+  hooks/        data loading
+  lib/score.ts  ranking algorithm
+  components/   draft, hero picker, suggestion cards, builds
+bot/bot.mjs     zero-dependency bot
 ```

@@ -6,10 +6,22 @@ import { HeroPicker } from './HeroPicker';
 import { HeroSlot, LastPickSlot } from './HeroSlot';
 import { SuggestionCard } from './SuggestionCard';
 import { POSITION_LABEL, type Position } from '../data/positions';
+import { Select } from './Select';
 
 const ENEMY_SLOTS = 5;
 const ALLY_SLOTS = 4;
 const POSITIONS: Position[] = [1, 2, 3, 4, 5];
+const BRACKETS = [
+  { value: 'all', label: 'All Ranks' },
+  { value: '1', label: 'Herald' },
+  { value: '2', label: 'Guardian' },
+  { value: '3', label: 'Crusader' },
+  { value: '4', label: 'Archon' },
+  { value: '5', label: 'Legend' },
+  { value: '6', label: 'Ancient' },
+  { value: '7', label: 'Divine' },
+  { value: '8', label: 'Immortal' },
+];
 
 interface Props {
   heroes: Hero[];
@@ -109,22 +121,12 @@ export function DraftTab({
       </section>
 
       <div className="controls">
-        <select
-          className="control"
+        <Select
           value={String(bracket)}
-          onChange={(e) => setBracket(e.target.value === 'all' ? 'all' : (Number(e.target.value) as Bracket))}
-          aria-label="Rank"
-        >
-          <option value="all">All Ranks</option>
-          <option value="1">Herald</option>
-          <option value="2">Guardian</option>
-          <option value="3">Crusader</option>
-          <option value="4">Archon</option>
-          <option value="5">Legend</option>
-          <option value="6">Ancient</option>
-          <option value="7">Divine</option>
-          <option value="8">Immortal</option>
-        </select>
+          options={BRACKETS}
+          onChange={(v) => setBracket(v === 'all' ? 'all' : (Number(v) as Bracket))}
+          ariaLabel="Rank"
+        />
 
         <button
           className={`control-icon${showTuning ? ' is-on' : ''}`}

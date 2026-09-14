@@ -97,6 +97,11 @@ export function heroImg(hero: Hero): string {
   return CDN + hero.img;
 }
 
+/** Рендер героя в полный рост — фон на странице героя. Тяжёлый файл (~1–1.5 МБ). */
+export function heroRender(hero: Hero): string {
+  return `${CDN}/apps/dota2/videos/dota_react/heroes/renders/${hero.name.replace('npc_dota_hero_', '')}.png`;
+}
+
 export function itemImg(item: ItemConstant): string {
   return item.img.startsWith('http') ? item.img : CDN + item.img;
 }

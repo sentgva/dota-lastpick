@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Bracket, Hero } from '../types';
-import { heroImg } from '../api/opendota';
+import { heroImg, heroRender } from '../api/opendota';
 import { baseWinrate, pickCount } from '../lib/score';
 import { HeroBuild } from './HeroBuild';
 import { POSITION_LABEL, playsPosition, positionLabelsOf, type Position } from '../data/positions';
@@ -32,7 +32,16 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
 
   if (selected) {
     return (
-      <div className="tab">
+      <div className="tab hero-page">
+        {/* Рендер в полный рост — крупный файл, поэтому грузится лениво
+            и проявляется плавно: страница читается сразу. */}
+        <img
+          className="hero-bg"
+          src={heroRender(selected)}
+          alt=""
+          loading="lazy"
+          onLoad={(e) => e.currentTarget.classList.add('is-loaded')}
+        />
         <button className="btn-ghost" onClick={() => setSelected(null)}>
           ← All Heroes
         </button>
