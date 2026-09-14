@@ -5,10 +5,11 @@ import { buildSuggestions, DEFAULT_WEIGHTS } from '../lib/score';
 import { HeroPicker } from './HeroPicker';
 import { HeroSlot, LastPickSlot } from './HeroSlot';
 import { SuggestionCard } from './SuggestionCard';
+import { POSITION_LABEL, type Position } from '../data/positions';
 
 const ENEMY_SLOTS = 5;
 const ALLY_SLOTS = 4;
-const ROLES = ['Carry', 'Support', 'Initiator', 'Disabler', 'Nuker', 'Durable', 'Escape', 'Pusher'];
+const POSITIONS: Position[] = [1, 2, 3, 4, 5];
 
 interface Props {
   heroes: Hero[];
@@ -34,7 +35,7 @@ export function DraftTab({
   setWeights,
 }: Props) {
   const [picking, setPicking] = useState<{ side: 'enemy' | 'ally'; index: number } | null>(null);
-  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [positionFilter, setPositionFilter] = useState<Position | null>(null);
   const [showTuning, setShowTuning] = useState(false);
 
   const pickedEnemies = enemies.filter((h): h is Hero => h !== null);
@@ -52,10 +53,18 @@ export function DraftTab({
       matchups: matchups.data ?? new Map(),
       bracket,
       weights,
-      roleFilter,
+      positionFilter,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroes, enemyIds.join(','), pickedAllies.map((h) => h.id).join(','), matchups.data, bracket, weights, roleFilter]);
+  }, [
+    heroes,
+    enemyIds.join(','),
+    pickedAllies.map((h) => h.id).join(','),
+    matchups.data,
+    bracket,
+    weights,
+    positionFilter,
+  ]);
 
   const takenIds = new Set([...pickedEnemies, ...pickedAllies].map((h) => h.id));
   const topPick = suggestions[0]?.hero ?? null;
@@ -117,20 +126,6 @@ export function DraftTab({
           <option value="8">Immortal</option>
         </select>
 
-        <select
-          className="control"
-          value={roleFilter ?? ''}
-          onChange={(e) => setRoleFilter(e.target.value || null)}
-          aria-label="Роль"
-        >
-          <option value="">Любая роль</option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-
         <button
           className={`control-icon${showTuning ? ' is-on' : ''}`}
           onClick={() => setShowTuning((v) => !v)}
@@ -138,6 +133,24 @@ export function DraftTab({
         >
           ⚙
         </button>
+      </div>
+
+      <div className="chips">
+        <button
+          className={`chip${positionFilter === null ? ' is-on' : ''}`}
+          onClick={() => setPositionFilter(null)}
+        >
+          Все
+        </button>
+        {POSITIONS.map((p) => (
+          <button
+            key={p}
+            className={`chip${positionFilter === p ? ' is-on' : ''}`}
+            onClick={() => setPositionFilter(positionFilter === p ? null : p)}
+          >
+            {POSITION_LABEL[p]}
+          </button>
+        ))}
       </div>
 
       {showTuning && (

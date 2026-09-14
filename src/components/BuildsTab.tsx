@@ -3,6 +3,8 @@ import type { Bracket, Hero } from '../types';
 import { heroImg } from '../api/opendota';
 import { baseWinrate, pickCount } from '../lib/score';
 import { HeroBuild } from './HeroBuild';
+import { POSITION_LABEL, playsPosition, positionsOf, type Position } from '../data/positions';
+import { shortName } from '../data/synergy';
 
 interface Props {
   heroes: Hero[];
@@ -11,12 +13,11 @@ interface Props {
   enemies: Hero[];
 }
 
-/** Роли OpenDota в порядке полезности для драфта. */
-const ROLES = ['Carry', 'Support', 'Initiator', 'Disabler', 'Nuker', 'Durable', 'Escape', 'Pusher', 'Jungler'];
+const POSITIONS: Position[] = [1, 2, 3, 4, 5];
 
 export function BuildsTab({ heroes, bracket, enemies }: Props) {
   const [query, setQuery] = useState('');
-  const [role, setRole] = useState<string | null>(null);
+  const [position, setPosition] = useState<Position | null>(null);
   const [selected, setSelected] = useState<Hero | null>(null);
   const [useDraft, setUseDraft] = useState(true);
 
@@ -24,10 +25,10 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
     const q = query.trim().toLowerCase();
     let list = heroes;
     if (q) list = list.filter((h) => h.localized_name.toLowerCase().includes(q));
-    // Герой обычно попадает в несколько ролей, поэтому это фильтр, а не разбиение.
-    if (role) list = list.filter((h) => h.roles.includes(role));
+    // Герой обычно играет на нескольких позициях, поэтому это фильтр, а не разбиение.
+    if (position) list = list.filter((h) => playsPosition(shortName(h.name), position));
     return [...list].sort((a, b) => pickCount(b, bracket) - pickCount(a, bracket));
-  }, [heroes, query, role, bracket]);
+  }, [heroes, query, position, bracket]);
 
   if (selected) {
     return (
@@ -39,7 +40,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
           <img src={heroImg(selected)} alt={selected.localized_name} />
           <div>
             <h2>{selected.localized_name}</h2>
-            <p>{selected.roles.join(' · ')}</p>
+            <p>{positionLabels(selected.name) || selected.roles.join(' · ')}</p>
             <p>
               винрейт <b>{baseWinrate(selected, bracket).toFixed(1)}%</b>
             </p>
@@ -64,30 +65,32 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
 
   return (
     <div className="tab">
-      <input
-        className="search"
-        placeholder="Поиск героя"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      <div className="search-bar">
+        <input
+          className="search"
+          placeholder="Поиск героя"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
 
-      <div className="role-chips">
-        <button className={`chip${role === null ? ' is-on' : ''}`} onClick={() => setRole(null)}>
+      <div className="chips">
+        <button className={`chip${position === null ? ' is-on' : ''}`} onClick={() => setPosition(null)}>
           Все
         </button>
-        {ROLES.map((r) => (
+        {POSITIONS.map((p) => (
           <button
-            key={r}
-            className={`chip${role === r ? ' is-on' : ''}`}
-            onClick={() => setRole(role === r ? null : r)}
+            key={p}
+            className={`chip${position === p ? ' is-on' : ''}`}
+            onClick={() => setPosition(position === p ? null : p)}
           >
-            {r}
+            {POSITION_LABEL[p]}
           </button>
         ))}
       </div>
 
-      <div className="picker-hint" style={{ padding: '0 0 8px' }}>
-        {role ? `${role} · ${filtered.length}` : `по популярности · ${filtered.length} героев`}
+      <div className="list-hint">
+        {position ? `${POSITION_LABEL[position]} · ${filtered.length}` : `по популярности · ${filtered.length} героев`}
       </div>
 
       <div className="hero-grid">
@@ -101,4 +104,11 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
       {filtered.length === 0 && <p className="muted">Ничего не найдено</p>}
     </div>
   );
+}
+
+/** «Керри · Мид» вместо ролей OpenDota, если позиция героя известна. */
+function positionLabels(heroName: string): string {
+  return positionsOf(shortName(heroName))
+    .map((p) => POSITION_LABEL[p])
+    .join(' · ');
 }

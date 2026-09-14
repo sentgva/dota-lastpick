@@ -8,6 +8,7 @@ import type {
   Weights,
 } from '../types';
 import { comboFor, shortName } from '../data/synergy';
+import { playsPosition, type Position } from '../data/positions';
 
 export const DEFAULT_WEIGHTS: Weights = { counter: 1, synergy: 0.5, meta: 0.8 };
 
@@ -116,12 +117,12 @@ export interface ScoreInput {
   matchups: Map<number, Matchup[]>;
   bracket: Bracket | 'all';
   weights: Weights;
-  /** Необязательный фильтр: показывать только героев с этой ролью. */
-  roleFilter?: string | null;
+  /** Необязательный фильтр: показывать только героев этой позиции. */
+  positionFilter?: Position | null;
 }
 
 export function buildSuggestions(input: ScoreInput): Suggestion[] {
-  const { heroes, enemies, allies, matchups, bracket, weights, roleFilter } = input;
+  const { heroes, enemies, allies, matchups, bracket, weights, positionFilter } = input;
 
   const taken = new Set([...enemies, ...allies].map((h) => h.id));
   const gaps = roleGaps(allies);
@@ -136,7 +137,7 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
 
   for (const candidate of heroes) {
     if (taken.has(candidate.id)) continue;
-    if (roleFilter && !candidate.roles.includes(roleFilter)) continue;
+    if (positionFilter && !playsPosition(shortName(candidate.name), positionFilter)) continue;
 
     // 1. Контрпик: среднее преимущество против выбранных врагов.
     const counters: CounterBreakdown[] = [];

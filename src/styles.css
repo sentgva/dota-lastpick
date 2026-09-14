@@ -259,7 +259,46 @@ h4 { margin: 12px 0 6px; }
   font-variant-numeric: tabular-nums;
   color: var(--accent-300);
 }
-.slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+.slider input[type="range"] {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+.slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-200);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.slider input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
+.slider input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+.slider input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
+.slider input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-200);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
 .tuning-foot { display: flex; align-items: center; gap: 10px; }
 .tuning-foot p { margin: 0; flex: 1; font-size: 11px; color: var(--neutral-600); }
 .toggle { display: flex; gap: 10px; align-items: center; margin: 10px 0; font-size: 13px; line-height: 1.35; }
@@ -374,8 +413,14 @@ h4 { margin: 12px 0 6px; }
 .warn-dot {
   display: inline-grid;
   place-items: center;
+  /* без flex: none родительский flex расплющивает кружок в овал */
+  flex: none;
+  box-sizing: border-box;
   width: 13px;
+  min-width: 13px;
   height: 13px;
+  min-height: 13px;
+  line-height: 1;
   margin-left: 5px;
   border-radius: 50%;
   background: var(--warn);
@@ -427,6 +472,22 @@ h4 { margin: 12px 0 6px; }
   color: var(--neutral-600);
 }
 .picker-foot { padding: 10px 14px 34px; font-size: 11px; color: var(--neutral-600); }
+
+/* Поиск держим над списком: иначе карточки героев наезжают на поле при скролле */
+.search-bar {
+  position: sticky;
+  top: 48px;
+  z-index: 4;
+  background: var(--bg);
+  padding: 10px 0 4px;
+}
+.list-hint {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--neutral-600);
+  padding: 0 0 8px;
+}
 
 /* ─── Сетка героев ─── */
 .hero-grid {
@@ -575,8 +636,9 @@ h4 { margin: 12px 0 6px; }
 }
 .refreshing span { margin-left: auto; font-size: 11px; color: var(--neutral-400); }
 
-/* Фильтр по ролям на вкладке «Билды» — герой обычно в нескольких ролях сразу */
-.role-chips {
+/* Фильтр по позициям: герой обычно играет на нескольких сразу, поэтому фильтр,
+   а не разбиение на секции — иначе Wraith King попал бы в три списка. */
+.chips {
   display: flex;
   gap: 6px;
   overflow-x: auto;
@@ -585,8 +647,8 @@ h4 { margin: 12px 0 6px; }
 }
 .chip {
   flex: none;
-  padding: 6px 12px;
-  border-radius: 14px;
+  padding: 7px 14px;
+  border-radius: 18px;
   border: 1px solid var(--divider);
   background: none;
   color: var(--neutral-400);
