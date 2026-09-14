@@ -40,7 +40,7 @@ export const CATEGORIES: Category[] = [
     label: 'хил и реген',
     heroes: [
       'huskar', 'necrolyte', 'alchemist', 'abaddon', 'dazzle', 'omniknight', 'treant',
-      'oracle', 'life_stealer', 'wraith_king', 'skeleton_king', 'undying', 'bloodseeker',
+      'oracle', 'life_stealer', 'skeleton_king', 'undying', 'bloodseeker',
     ],
     items: [
       { item: 'spirit_vessel', reason: 'режет хил и реген', weight: 5 },
@@ -58,7 +58,7 @@ export const CATEGORIES: Category[] = [
       { item: 'mjollnir', reason: 'молнии выносят иллюзии и суммонов', weight: 4 },
       { item: 'shivas_guard', reason: 'AoE-урон и минус скорость атаки по пачке', weight: 4 },
       { item: 'radiance', reason: 'постоянный AoE-урон по иллюзиям', weight: 3 },
-      { item: 'battle_fury', reason: 'сплэш по клонам, если вы керри с рукой', weight: 2 },
+      { item: 'bfury', reason: 'сплэш по клонам, если вы керри с рукой', weight: 2 },
     ],
   },
   {
@@ -80,8 +80,8 @@ export const CATEGORIES: Category[] = [
     label: 'сильная правая рука',
     heroes: [
       'sniper', 'drow_ranger', 'phantom_assassin', 'juggernaut', 'troll_warlord', 'ursa',
-      'anti_mage', 'antimage', 'slark', 'morphling', 'gyrocopter', 'luna', 'medusa',
-      'templar_assassin', 'monkey_king', 'wraith_king', 'skeleton_king', 'clinkz',
+      'antimage', 'slark', 'morphling', 'gyrocopter', 'luna', 'medusa',
+      'templar_assassin', 'monkey_king', 'skeleton_king', 'clinkz',
     ],
     items: [
       { item: 'crimson_guard', reason: 'блок физического урона на команду', weight: 5 },
@@ -140,7 +140,7 @@ export const CATEGORIES: Category[] = [
   {
     id: 'blink_gap',
     label: 'резкое сближение',
-    heroes: ['storm_spirit', 'queenofpain', 'antimage', 'anti_mage', 'ember_spirit', 'puck', 'void_spirit', 'slark'],
+    heroes: ['storm_spirit', 'queenofpain', 'antimage', 'ember_spirit', 'puck', 'void_spirit', 'slark'],
     items: [
       { item: 'sheepstick', reason: 'ловит прыгунов и отключает мобильность', weight: 4 },
       { item: 'orchid', reason: 'сайленс не даёт уйти прыжком', weight: 3 },
@@ -150,7 +150,7 @@ export const CATEGORIES: Category[] = [
   {
     id: 'mana_burn',
     label: 'сжигание маны',
-    heroes: ['antimage', 'anti_mage', 'nyx_assassin', 'invoker', 'lion', 'pugna', 'keeper_of_the_light'],
+    heroes: ['antimage', 'nyx_assassin', 'invoker', 'lion', 'pugna', 'keeper_of_the_light'],
     items: [{ item: 'soul_ring', reason: 'ман-пул страдает, нужен дополнительный источник', weight: 2 }],
   },
 ];
