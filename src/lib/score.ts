@@ -91,11 +91,11 @@ function roleGaps(allies: Hero[]): { role: string; label: string; value: number 
   if (allies.length === 0) return [];
   const count = (role: string) => allies.filter((a) => a.roles.includes(role)).length;
   const gaps: { role: string; label: string; value: number }[] = [];
-  if (count('Carry') === 0) gaps.push({ role: 'Carry', label: 'керри', value: 4 });
-  if (count('Support') < 2) gaps.push({ role: 'Support', label: 'саппорта', value: 3 });
-  if (count('Initiator') === 0) gaps.push({ role: 'Initiator', label: 'инициатора', value: 3 });
-  if (count('Disabler') === 0) gaps.push({ role: 'Disabler', label: 'контроля', value: 2 });
-  if (count('Durable') === 0) gaps.push({ role: 'Durable', label: 'живучего героя', value: 1 });
+  if (count('Carry') === 0) gaps.push({ role: 'Carry', label: 'a carry', value: 4 });
+  if (count('Support') < 2) gaps.push({ role: 'Support', label: 'a support', value: 3 });
+  if (count('Initiator') === 0) gaps.push({ role: 'Initiator', label: 'an initiator', value: 3 });
+  if (count('Disabler') === 0) gaps.push({ role: 'Disabler', label: 'lockdown', value: 2 });
+  if (count('Durable') === 0) gaps.push({ role: 'Durable', label: 'a durable hero', value: 1 });
   return gaps;
 }
 
@@ -105,10 +105,10 @@ function damageGap(allies: Hero[], candidate: Hero): { value: number; note: stri
   const magical = allies.filter((a) => a.primary_attr === 'int').length;
   const physical = allies.filter((a) => a.primary_attr === 'agi' || a.primary_attr === 'str').length;
   if (magical === 0 && candidate.primary_attr === 'int') {
-    return { value: 2, note: 'у команды нет магического урона' };
+    return { value: 2, note: 'Team has no magic damage' };
   }
   if (physical === 0 && (candidate.primary_attr === 'agi' || candidate.primary_attr === 'str')) {
-    return { value: 2, note: 'у команды нет физического урона' };
+    return { value: 2, note: 'Team has no physical damage' };
   }
   return null;
 }
@@ -170,7 +170,7 @@ export function buildSuggestions(input: ScoreInput): Suggestion[] {
     for (const gap of gaps) {
       if (candidate.roles.includes(gap.role)) {
         roleBonus += gap.value;
-        roleNotes.push(`в команде не хватает ${gap.label}`);
+        roleNotes.push(`Team lacks ${gap.label}`);
       }
     }
     const dmg = damageGap(allies, candidate);

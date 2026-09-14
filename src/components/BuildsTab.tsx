@@ -34,7 +34,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
     return (
       <div className="tab">
         <button className="btn-ghost" onClick={() => setSelected(null)}>
-          ← Все герои
+          ← All Heroes
         </button>
         <div className="hero-header">
           <img src={heroImg(selected)} alt={selected.localized_name} />
@@ -42,7 +42,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
             <h2>{selected.localized_name}</h2>
             <p>{positionLabelsOf(selected.name)}</p>
             <p>
-              винрейт <b>{baseWinrate(selected, bracket).toFixed(1)}%</b>
+              Win rate <b>{baseWinrate(selected, bracket).toFixed(1)}%</b>
             </p>
           </div>
         </div>
@@ -51,7 +51,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
           <label className="toggle">
             <input type="checkbox" checked={useDraft} onChange={(e) => setUseDraft(e.target.checked)} />
             <span>
-              Учитывать драфт соперника
+              Account for enemy draft
               <br />
               <span className="muted small">{enemies.map((e) => e.localized_name).join(', ')}</span>
             </span>
@@ -68,7 +68,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
       <div className="search-bar">
         <input
           className="search"
-          placeholder="Поиск героя"
+          placeholder="Search hero"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -76,7 +76,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
 
       <div className="chips">
         <button className={`chip${position === null ? ' is-on' : ''}`} onClick={() => setPosition(null)}>
-          Все
+          All
         </button>
         {POSITIONS.map((p) => (
           <button
@@ -90,7 +90,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
       </div>
 
       <div className="list-hint">
-        {position ? `${POSITION_LABEL[position]} · ${filtered.length}` : `по популярности · ${filtered.length} героев`}
+        {position ? `${POSITION_LABEL[position]} · ${filtered.length}` : `By Popularity · ${filtered.length} heroes`}
       </div>
 
       <div className="hero-grid">
@@ -101,7 +101,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
           </button>
         ))}
       </div>
-      {filtered.length === 0 && <p className="muted">Ничего не найдено</p>}
+      {filtered.length === 0 && <p className="muted">No heroes found</p>}
     </div>
   );
 }

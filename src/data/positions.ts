@@ -87,5 +87,5 @@ export function playsPosition(shortName: string, position: Position): boolean {
  */
 export function positionLabelsOf(heroName: string): string {
   const list = positionsOf(heroName.replace('npc_dota_hero_', ''));
-  return list.length ? list.map((p) => POSITION_LABEL[p]).join(' · ') : 'позиция не указана';
+  return list.length ? list.map((p) => POSITION_LABEL[p]).join(' · ') : 'Position not set';
 }

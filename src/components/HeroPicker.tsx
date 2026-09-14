@@ -15,7 +15,7 @@ interface Props {
 }
 
 const BRACKET_NAME: Record<string, string> = {
-  all: 'все ранги',
+  all: 'All Ranks',
   '1': 'Herald', '2': 'Guardian', '3': 'Crusader', '4': 'Archon',
   '5': 'Legend', '6': 'Ancient', '7': 'Divine', '8': 'Immortal',
 };
@@ -44,7 +44,7 @@ export function HeroPicker({ heroes, disabledIds, bracket, title, onPick, onClos
         <div className="picker-grip" />
         <div className="picker-head">
           <strong>{title}</strong>
-          <button className="picker-close" onClick={onClose} aria-label="Закрыть">
+          <button className="picker-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -52,13 +52,13 @@ export function HeroPicker({ heroes, disabledIds, bracket, title, onPick, onClos
           <input
             className="search"
             autoFocus
-            placeholder="Поиск героя"
+            placeholder="Search hero"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <div className="picker-hint">
-          {query ? `найдено ${filtered.length}` : `по популярности · ${BRACKET_NAME[String(bracket)]}`}
+          {query ? `${filtered.length} found` : `By Popularity · ${BRACKET_NAME[String(bracket)]}`}
         </div>
         <div className="hero-grid">
           {filtered.map((hero) => {
@@ -78,9 +78,9 @@ export function HeroPicker({ heroes, disabledIds, bracket, title, onPick, onClos
               </button>
             );
           })}
-          {filtered.length === 0 && <p className="muted">Ничего не найдено</p>}
+          {filtered.length === 0 && <p className="muted">No heroes found</p>}
         </div>
-        {someDisabled && <div className="picker-foot">приглушённые уже заняты в драфте</div>}
+        {someDisabled && <div className="picker-foot">Dimmed heroes are already in the draft</div>}
       </div>
     </div>
   );

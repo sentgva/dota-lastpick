@@ -9,10 +9,10 @@ import { fitsPosition } from '../data/itemRoles';
 import { POSITION_LABEL, positionsOf, type Position } from '../data/positions';
 
 const PHASES: { key: keyof ItemPopularity; label: string }[] = [
-  { key: 'start_game_items', label: 'Старт' },
-  { key: 'early_game_items', label: 'Ранняя игра' },
-  { key: 'mid_game_items', label: 'Середина' },
-  { key: 'late_game_items', label: 'Поздняя игра' },
+  { key: 'start_game_items', label: 'Starting Items' },
+  { key: 'early_game_items', label: 'Early Game' },
+  { key: 'mid_game_items', label: 'Mid Game' },
+  { key: 'late_game_items', label: 'Late Game' },
 ];
 
 const TOP_PER_PHASE = 8;
@@ -44,7 +44,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
           поэтому он идёт первым и выделен акцентной рамкой. */}
       {enemies.length > 0 && (
         <section className="counter-build">
-          <h4>Против драфта соперника</h4>
+          <h4>Against Enemy Draft</h4>
           {threats.length > 0 && (
             <ul className="threats">
               {threats.map((t) => (
@@ -56,7 +56,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
             </ul>
           )}
           {counters.length === 0 ? (
-            <p className="muted small">Особых требований к закупу нет — берите стандартный билд.</p>
+            <p className="muted small">No special item requirements — go with the standard build.</p>
           ) : (
             <>
               <div className="item-row">
@@ -65,7 +65,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
                     key={c.item}
                     item={lookup(byKey, c.item)}
                     fallbackName={c.item}
-                    title={`${c.reasons.join('; ')} — из-за: ${c.triggeredBy.join(', ')}`}
+                    title={`${c.reasons.join('; ')} — because of ${c.triggeredBy.join(', ')}`}
                   />
                 ))}
               </div>
@@ -82,7 +82,7 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
         </section>
       )}
 
-      <h4>Популярный закуп</h4>
+      <h4>Item Build</h4>
 
       {heroPositions.length > 0 && (
         <div className="chips chips-sm">
@@ -96,12 +96,12 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
             </button>
           ))}
           <button className={`chip${position === null ? ' is-on' : ''}`} onClick={() => setPosition(null)}>
-            Всё
+            All
           </button>
         </div>
       )}
 
-      {popularity.loading && <p className="muted small">Загрузка закупа…</p>}
+      {popularity.loading && <p className="muted small">Loading items…</p>}
       {popularity.error && <p className="error small">{popularity.error}</p>}
 
       {popularity.data &&
@@ -129,9 +129,9 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
         })}
 
       {position !== null && (
-        <p className="muted small">
-          Сборка под {POSITION_LABEL[position]}: общий закуп героя, отфильтрованный по тому, что
-          собирают на этой позиции. Отдельной статистики по позициям OpenDota не отдаёт.
+        <p className="build-note">
+          {POSITION_LABEL[position]} build — the hero's overall item stats filtered to what this
+          position actually buys. OpenDota does not publish per-position data.
         </p>
       )}
     </div>

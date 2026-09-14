@@ -42,7 +42,7 @@ async function get<T>(path: string, cacheKey: string, ttl: number): Promise<T> {
       try {
         res = await fetch(url.toString());
       } catch {
-        lastError = new Error('Нет связи с OpenDota — проверьте интернет');
+        lastError = new Error('No connection to OpenDota — check your internet');
         continue;
       }
       if (res.ok) {
@@ -51,16 +51,16 @@ async function get<T>(path: string, cacheKey: string, ttl: number): Promise<T> {
         return data;
       }
       if (res.status === 429) {
-        throw new Error('OpenDota: превышен лимит запросов, попробуйте через минуту');
+        throw new Error('OpenDota rate limit reached — try again in a minute');
       }
       lastError = new Error(
         res.status >= 500
-          ? `OpenDota временно недоступен (${res.status})`
-          : `OpenDota вернул ${res.status}`,
+          ? `OpenDota is temporarily unavailable (${res.status})`
+          : `OpenDota returned ${res.status}`,
       );
       if (res.status < 500) break;
     }
-    throw lastError ?? new Error('OpenDota недоступен');
+    throw lastError ?? new Error('OpenDota unavailable');
   })().finally(() => inflight.delete(cacheKey));
 
   inflight.set(cacheKey, p);

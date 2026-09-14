@@ -12,7 +12,7 @@ interface Props {
 export function HeroSlot({ hero, onClick, onClear, variant }: Props) {
   if (!hero) {
     return (
-      <button className={`slot slot-empty slot-${variant}`} onClick={onClick} aria-label="Выбрать героя">
+      <button className={`slot slot-empty slot-${variant}`} onClick={onClick} aria-label="Pick hero">
         +
       </button>
     );
@@ -27,7 +27,7 @@ export function HeroSlot({ hero, onClick, onClear, variant }: Props) {
           e.stopPropagation();
           onClear();
         }}
-        aria-label="Убрать героя"
+        aria-label="Remove hero"
       >
         ×
       </button>
@@ -38,9 +38,9 @@ export function HeroSlot({ hero, onClick, onClear, variant }: Props) {
 /** Пустое место последнего пика — то, что подбирает приложение. */
 export function LastPickSlot({ suggested }: { suggested: Hero | null }) {
   return (
-    <div className="slot-lastpick" title={suggested ? `Рекомендация: ${suggested.localized_name}` : undefined}>
+    <div className="slot-lastpick" title={suggested ? `Suggested: ${suggested.localized_name}` : undefined}>
       {suggested && <img src={heroImg(suggested)} alt="" />}
-      <span className="slot-lastpick-label">{suggested ? suggested.localized_name : 'последний пик'}</span>
+      <span className="slot-lastpick-label">{suggested ? suggested.localized_name : 'Last Pick'}</span>
     </div>
   );
 }

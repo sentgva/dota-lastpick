@@ -73,7 +73,7 @@ export function DraftTab({
     <div className="tab">
       <section className="draft-side">
         <h3 className="section-head">
-          Драфт соперника
+          Enemy Draft
           <span className="section-count">{pickedEnemies.length} / {ENEMY_SLOTS}</span>
         </h3>
         <div className="slots">
@@ -91,7 +91,7 @@ export function DraftTab({
 
       <section className="draft-side">
         <h3 className="section-head">
-          Ваша команда
+          Your Team
           <span className="section-count">{pickedAllies.length} / {ALLY_SLOTS}</span>
         </h3>
         <div className="slots">
@@ -113,9 +113,9 @@ export function DraftTab({
           className="control"
           value={String(bracket)}
           onChange={(e) => setBracket(e.target.value === 'all' ? 'all' : (Number(e.target.value) as Bracket))}
-          aria-label="Ранг"
+          aria-label="Rank"
         >
-          <option value="all">Все ранги</option>
+          <option value="all">All Ranks</option>
           <option value="1">Herald</option>
           <option value="2">Guardian</option>
           <option value="3">Crusader</option>
@@ -129,7 +129,7 @@ export function DraftTab({
         <button
           className={`control-icon${showTuning ? ' is-on' : ''}`}
           onClick={() => setShowTuning((v) => !v)}
-          aria-label="Веса оценки"
+          aria-label="Score weights"
         >
           ⚙
         </button>
@@ -140,7 +140,7 @@ export function DraftTab({
           className={`chip${positionFilter === null ? ' is-on' : ''}`}
           onClick={() => setPositionFilter(null)}
         >
-          Все
+          All
         </button>
         {POSITIONS.map((p) => (
           <button
@@ -156,27 +156,27 @@ export function DraftTab({
       {showTuning && (
         <div className="tuning">
           <h4 className="section-head">
-            Веса оценки
-            <span className="section-count">0 — 2, шаг 0.1</span>
+            Score Weights
+            <span className="section-count">0 — 2, step 0.1</span>
           </h4>
           <WeightSlider
-            label="Контрпик"
+            label="Counter"
             value={weights.counter}
             onChange={(v) => setWeights({ ...weights, counter: v })}
           />
           <WeightSlider
-            label="Синергия"
+            label="Synergy"
             value={weights.synergy}
             onChange={(v) => setWeights({ ...weights, synergy: v })}
           />
-          <WeightSlider label="Мета" value={weights.meta} onChange={(v) => setWeights({ ...weights, meta: v })} />
+          <WeightSlider label="Meta" value={weights.meta} onChange={(v) => setWeights({ ...weights, meta: v })} />
           <div className="tuning-foot">
             <button className="btn-ghost btn-accent" onClick={() => setWeights(DEFAULT_WEIGHTS)}>
-              По умолчанию
+              Defaults
             </button>
             {/* «Сброс» держим здесь, вдали от часто нажимаемых слотов */}
             <button className="btn-ghost" onClick={reset}>
-              Сброс драфта
+              Clear Draft
             </button>
           </div>
         </div>
@@ -184,20 +184,20 @@ export function DraftTab({
 
       {matchups.loading && suggestions.length > 0 && (
         <div className="refreshing">
-          Загрузка матчапов… <span>показаны прежние данные</span>
+          Loading matchups… <span>showing previous data</span>
         </div>
       )}
       {matchups.error && <p className="error small">{matchups.error}</p>}
 
       <section className="results">
         <h3 className="section-head">
-          Кого брать
-          {suggestions.length > 0 && <span className="section-count">{suggestions.length} вариантов</span>}
+          Best Picks
+          {suggestions.length > 0 && <span className="section-count">{suggestions.length} heroes</span>}
         </h3>
         {suggestions.length === 0 ? (
           <div className="empty">
-            <p className="empty-title">Выберите хотя бы одного вражеского героя.</p>
-            <p className="empty-sub">Рекомендации появятся сразу после первого.</p>
+            <p className="empty-title">Pick at least one enemy hero.</p>
+            <p className="empty-sub">Suggestions appear right after the first one.</p>
           </div>
         ) : (
           suggestions
@@ -213,7 +213,7 @@ export function DraftTab({
           heroes={heroes}
           disabledIds={takenIds}
           bracket={bracket}
-          title={picking.side === 'enemy' ? 'Выберите вражеского героя' : 'Выберите союзника'}
+          title={picking.side === 'enemy' ? 'Select Enemy Hero' : 'Select Ally'}
           onPick={(hero) => {
             setSlot(picking.side, picking.index, hero);
             setPicking(null);

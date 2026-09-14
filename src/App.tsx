@@ -14,7 +14,7 @@ export function App() {
   const [bracket, setBracket] = useState<Bracket | 'all'>('all');
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
 
-  // Драфт живёт здесь, чтобы вкладка «Билды» могла его переиспользовать.
+  // Draft живёт здесь, чтобы вкладка «Builds» могла его переиспользовать.
   const [enemies, setEnemies] = useState<(Hero | null)[]>(Array(5).fill(null));
   const [allies, setAllies] = useState<(Hero | null)[]>(Array(4).fill(null));
 
@@ -33,11 +33,11 @@ export function App() {
     setAllies(Array(4).fill(null));
   };
 
-  if (heroes.loading) return <div className="center muted">Загрузка героев…</div>;
+  if (heroes.loading) return <div className="center muted">Loading heroes…</div>;
   if (heroes.error || !heroes.data) {
     return (
       <div className="center">
-        <p className="error">{heroes.error ?? 'Не удалось загрузить данные'}</p>
+        <p className="error">{heroes.error ?? 'Failed to load data'}</p>
         <button
           className="btn-ghost"
           onClick={() => {
@@ -45,7 +45,7 @@ export function App() {
             location.reload();
           }}
         >
-          Сбросить кэш и повторить
+          Clear Cache & Retry
         </button>
       </div>
     );
@@ -55,10 +55,10 @@ export function App() {
     <div className="app">
       <nav className="tabs">
         <button className={tab === 'draft' ? 'active' : ''} onClick={() => setTab('draft')}>
-          Драфт
+          Draft
         </button>
         <button className={tab === 'builds' ? 'active' : ''} onClick={() => setTab('builds')}>
-          Билды
+          Builds
         </button>
       </nav>
 

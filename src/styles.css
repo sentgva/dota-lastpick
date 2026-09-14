@@ -112,7 +112,9 @@ h4 { margin: 12px 0 6px; }
   border: 0;
   color: inherit;
   min-height: 62px;
+  transition: opacity 0.12s ease;
 }
+.slot:active { opacity: 0.8; }
 /* враг — срезанный угол и прямые края */
 .slot-enemy { clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
 /* союзник — скруглённый */
@@ -240,6 +242,7 @@ h4 { margin: 12px 0 6px; }
   cursor: pointer;
 }
 .btn-accent { border-color: var(--accent); color: var(--accent); }
+.btn-ghost:active, .control-icon:active { transform: scale(0.97); }
 
 /* Панель весов */
 .tuning {
@@ -306,7 +309,16 @@ h4 { margin: 12px 0 6px; }
 
 /* ─── Карточка рекомендации ─── */
 .results { margin-top: 16px; }
-.card { background: var(--surface); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
+.card {
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+  transition: border-color 0.12s ease;
+}
+.card:hover { border-color: var(--divider); }
+.card:has(.card-body) { border-color: var(--accent-700); }
 .card-head {
   display: flex;
   align-items: center;
@@ -385,22 +397,22 @@ h4 { margin: 12px 0 6px; }
 .breakdown li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
 .breakdown-wide li {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: 8px;
+  grid-template-columns: 1fr 96px 62px 56px;
+  gap: 6px;
   align-items: baseline;
-  padding: 5px 0;
-  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--text) 7%, transparent);
+  padding: 6px 0;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--text) 6%, transparent);
 }
+.breakdown-wide li:last-child { box-shadow: none; }
 .breakdown-wide li.is-weak { opacity: 0.55; }
 .cr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-.cr-wr { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--neutral-300); }
+.cr-wr { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--neutral-300); text-align: right; }
 .cr-moe { color: var(--neutral-600); font-size: 11px; }
-.cr-games { color: var(--neutral-600); font-size: 11px; font-variant-numeric: tabular-nums; }
+.cr-games { color: var(--neutral-600); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; }
 .cr-adv {
   font-size: 14px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  min-width: 52px;
   text-align: right;
 }
 .combo-row { display: flex; gap: 9px; align-items: flex-start; }
@@ -533,6 +545,7 @@ h4 { margin: 12px 0 6px; }
   text-overflow: ellipsis;
 }
 .hero-cell.is-disabled { opacity: 0.3; cursor: not-allowed; }
+.hero-cell:not(.is-disabled):active { opacity: 0.75; }
 
 /* ─── Билды ─── */
 .tab { padding-top: 12px; }
@@ -546,7 +559,8 @@ h4 { margin: 12px 0 6px; }
   background: var(--neutral-900);
 }
 .hero-header h2 { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.1; }
-.hero-header p { margin: 2px 0 0; font-size: 13px; color: var(--neutral-500); }
+.hero-header p { margin: 3px 0 0; font-size: 13px; color: var(--neutral-500); }
+.hero-header b { color: var(--text); font-variant-numeric: tabular-nums; font-size: 15px; }
 .build { margin-top: 12px; }
 .phase { margin-bottom: 12px; }
 .item-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; }
@@ -569,6 +583,14 @@ h4 { margin: 12px 0 6px; }
   text-overflow: ellipsis;
 }
 .phase-label { margin: 0 0 5px; font-size: 13px; color: var(--neutral-500); }
+.build-note {
+  margin: 4px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--neutral-600);
+}
 .chips-sm { padding: 4px 0 10px; }
 .chips-sm .chip { padding: 5px 11px; font-size: 12px; }
 
@@ -650,6 +672,7 @@ h4 { margin: 12px 0 6px; }
   cursor: pointer;
   white-space: nowrap;
 }
+.chip:active { transform: scale(0.97); }
 .chip.is-on {
   border-color: var(--accent);
   color: var(--accent-200);

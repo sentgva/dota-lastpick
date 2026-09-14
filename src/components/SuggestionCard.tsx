@@ -12,9 +12,9 @@ interface Props {
 }
 
 const QUALITY_LABEL: Record<'low' | 'medium' | 'high', string> = {
-  low: 'мало данных',
-  medium: 'данных средне',
-  high: 'данных достаточно',
+  low: 'Low confidence',
+  medium: 'Medium confidence',
+  high: 'High confidence',
 };
 
 export function SuggestionCard({ suggestion, rank, enemies }: Props) {
@@ -37,9 +37,9 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
       </button>
 
       <div className="bars">
-        <Bar label="Контрпик" value={counterScore} quality={quality} />
-        <Bar label="Синергия" value={synergyScore} />
-        <Bar label="Мета" value={metaScore} />
+        <Bar label="Counter" value={counterScore} quality={quality} />
+        <Bar label="Synergy" value={synergyScore} />
+        <Bar label="Meta" value={metaScore} />
       </div>
 
       {open && (
@@ -48,10 +48,10 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
 
           {counters.length > 0 && (
             <>
-              <h4>Против кого работает</h4>
+              <h4>Matchups</h4>
               <p className={`sample-note sample-${quality}`}>
-                Выборка {counterSample.toLocaleString('ru')} игр · {QUALITY_LABEL[quality]}
-                {quality === 'low' && ' — эти проценты почти не отличимы от случайных'}
+                Sample: {counterSample.toLocaleString('en')} games · {QUALITY_LABEL[quality]}
+                {quality === 'low' && ' — these numbers are barely distinguishable from noise'}
               </p>
               <ul className="breakdown breakdown-wide">
                 {counters.map((c) => (
@@ -63,7 +63,7 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
 
           {synergies.length > 0 && (
             <>
-              <h4>Комбо с союзниками</h4>
+              <h4>Synergy With Allies</h4>
               <ul className="breakdown">
                 {synergies.map((s) => (
                   <li key={s.ally.id} className="combo-row">
@@ -96,7 +96,7 @@ function CounterRow({ counter }: { counter: CounterBreakdown }) {
         {counter.winrate.toFixed(1)}%
         <span className="cr-moe"> ±{moe.toFixed(1)}</span>
       </span>
-      <span className="cr-games">{counter.games} игр</span>
+      <span className="cr-games">{counter.games} games</span>
       <span className={`cr-adv ${counter.advantage >= 0 ? 'pos' : 'neg'}`}>{fmt(counter.advantage)}</span>
     </li>
   );
@@ -118,7 +118,7 @@ function Bar({
       <span className="bar-label">
         {label}
         {quality === 'low' && (
-          <span className="warn-dot" title="мало данных для надёжного вывода">
+          <span className="warn-dot" title="Sample too small to be reliable">
             !
           </span>
         )}

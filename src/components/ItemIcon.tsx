@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function ItemIcon({ item, fallbackName, title }: Props) {
-  const label = item?.dname ?? fallbackName ?? 'Неизвестный предмет';
+  const label = item?.dname ?? fallbackName ?? 'Unknown item';
   return (
     <div className="item" title={title ?? label}>
       {item ? (
