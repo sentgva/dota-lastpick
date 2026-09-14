@@ -30,7 +30,7 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
         <img src={heroImg(hero)} alt={hero.localized_name} />
         <span className="card-title">
           <strong>{hero.localized_name}</strong>
-          <span className="muted small">{hero.roles.slice(0, 3).join(' · ')}</span>
+          <span>{hero.roles.slice(0, 3).join(' · ')}</span>
         </span>
         <span className={`score ${score >= 0 ? 'pos' : 'neg'}`}>{fmt(score)}</span>
       </button>
@@ -65,9 +65,12 @@ export function SuggestionCard({ suggestion, rank, enemies }: Props) {
               <h4>Комбо с союзниками</h4>
               <ul className="breakdown">
                 {synergies.map((s) => (
-                  <li key={s.ally.id}>
-                    <span>{s.ally.localized_name}</span>
-                    <span className="muted small">{s.reason}</span>
+                  <li key={s.ally.id} className="combo-row">
+                    <img src={heroImg(s.ally)} alt="" width={44} height={25} style={{ borderRadius: 4 }} />
+                    <span>
+                      <strong>{s.ally.localized_name}</strong>
+                      <p>{s.reason}</p>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -107,18 +110,23 @@ function Bar({
   value: number;
   quality?: 'low' | 'medium' | 'high';
 }) {
-  // Шкала подобрана под типичный разброс: ±8 покрывает почти все значения.
-  const width = Math.min(100, Math.abs(value) * 12.5);
+  // Полоса растёт от центра: вправо — плюс, влево — минус. Шкала ±8.
+  const half = Math.min(Math.abs(value) / 8, 1) * 50;
   return (
     <div className="bar">
       <span className="bar-label">
         {label}
-        {quality === 'low' && <span className="warn-dot" title="мало данных для надёжного вывода">!</span>}
+        {quality === 'low' && (
+          <span className="warn-dot" title="мало данных для надёжного вывода">
+            !
+          </span>
+        )}
       </span>
       <div className="bar-track">
+        <div className="bar-zero" />
         <div
           className={`bar-fill ${value >= 0 ? 'pos' : 'neg'}`}
-          style={{ width: `${width}%`, marginLeft: value >= 0 ? '50%' : `${50 - width}%` }}
+          style={{ width: `${half}%`, left: value >= 0 ? '50%' : `${50 - half}%` }}
         />
       </div>
       <span className={`bar-value ${value >= 0 ? 'pos' : 'neg'}`}>{fmt(value)}</span>
@@ -126,6 +134,7 @@ function Bar({
   );
 }
 
+/** Минус пишем настоящим знаком, а не дефисом — так колонка чисел читается ровнее. */
 function fmt(n: number): string {
-  return (n >= 0 ? '+' : '') + n.toFixed(2);
+  return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(2);
 }

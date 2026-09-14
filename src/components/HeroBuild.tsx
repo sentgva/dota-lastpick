@@ -15,7 +15,7 @@ const TOP_PER_PHASE = 8;
 
 interface Props {
   hero: Hero;
-  /** Если передан вражеский драфт — под билдом появится блок «против этого драфта». */
+  /** Если передан вражеский драфт — сверху появится блок «против этого драфта». */
   enemies?: Hero[];
 }
 
@@ -32,11 +32,55 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
 
   return (
     <div className="build">
-      <h3>Популярный закуп · {hero.localized_name}</h3>
-      <p className="muted small">Данные OpenDota: что реально покупают на этом герое в паблик-матчах.</p>
+      {/* Этот блок ценнее популярного закупа: такого нигде больше не посмотреть,
+          поэтому он идёт первым и выделен акцентной рамкой. */}
+      {enemies.length > 0 && (
+        <section className="counter-build">
+          <h4>Против драфта соперника</h4>
+          {threats.length > 0 && (
+            <ul className="threats">
+              {threats.map((t) => (
+                <li key={t.label}>
+                  {t.label}
+                  <b>{t.heroes.length}</b>
+                </li>
+              ))}
+            </ul>
+          )}
+          {counters.length === 0 ? (
+            <p className="muted small">Особых требований к закупу нет — берите стандартный билд.</p>
+          ) : (
+            <>
+              <div className="item-row">
+                {counters.slice(0, 10).map((c) => (
+                  <ItemIcon
+                    key={c.item}
+                    item={lookup(byKey, c.item)}
+                    fallbackName={c.item}
+                    title={`${c.reasons.join('; ')} — из-за: ${c.triggeredBy.join(', ')}`}
+                  />
+                ))}
+              </div>
+              <ul className="reasons">
+                {counters.slice(0, 5).map((c) => (
+                  <li key={c.item}>
+                    <strong>{lookup(byKey, c.item)?.dname ?? c.item}</strong> — {c.reasons[0]} (
+                    {c.triggeredBy.join(', ')})
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
 
-      {popularity.loading && <p className="muted">Загрузка закупа…</p>}
-      {popularity.error && <p className="error">{popularity.error}</p>}
+      <h4>
+        Популярный закуп
+        {enemies.length > 0 && <span className="section-count">без учёта драфта</span>}
+      </h4>
+
+      {popularity.loading && <p className="muted small">Загрузка закупа…</p>}
+      {popularity.error && <p className="error small">{popularity.error}</p>}
 
       {popularity.data &&
         PHASES.map(({ key, label }) => {
@@ -47,7 +91,9 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
           if (entries.length === 0) return null;
           return (
             <section key={key} className="phase">
-              <h4>{label}</h4>
+              <p className="muted small" style={{ margin: '0 0 5px' }}>
+                {label}
+              </p>
               <div className="item-row">
                 {entries.map(({ id, count }) => {
                   const found = byId?.get(id);
@@ -64,47 +110,6 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
             </section>
           );
         })}
-
-      {enemies.length > 0 && (
-        <section className="phase counter-build">
-          <h4>Против драфта соперника</h4>
-          {threats.length > 0 && (
-            <ul className="threats">
-              {threats.map((t) => (
-                <li key={t.label}>
-                  <span className="tag">{t.label}</span> {t.heroes.length} геро
-                  {t.heroes.length === 1 ? 'й' : 'я'}
-                </li>
-              ))}
-            </ul>
-          )}
-          {counters.length === 0 ? (
-            <p className="muted">Особых требований к закупу нет — берите стандартный билд.</p>
-          ) : (
-            <div className="item-row">
-              {counters.slice(0, 10).map((c) => (
-                <ItemIcon
-                  key={c.item}
-                  item={lookup(byKey, c.item)}
-                  fallbackName={c.item}
-                  caption={c.triggeredBy.slice(0, 2).join(', ')}
-                  title={`${c.reasons.join('; ')} — из-за: ${c.triggeredBy.join(', ')}`}
-                />
-              ))}
-            </div>
-          )}
-          {counters.length > 0 && (
-            <ul className="reasons">
-              {counters.slice(0, 5).map((c) => (
-                <li key={c.item}>
-                  <strong>{lookup(byKey, c.item)?.dname ?? c.item}</strong> — {c.reasons[0]} (
-                  {c.triggeredBy.join(', ')})
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
     </div>
   );
 }

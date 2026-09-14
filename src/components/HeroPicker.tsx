@@ -14,6 +14,12 @@ interface Props {
   onClose(): void;
 }
 
+const BRACKET_NAME: Record<string, string> = {
+  all: 'все ранги',
+  '1': 'Herald', '2': 'Guardian', '3': 'Crusader', '4': 'Archon',
+  '5': 'Legend', '6': 'Ancient', '7': 'Divine', '8': 'Immortal',
+};
+
 export function HeroPicker({ heroes, disabledIds, bracket, title, onPick, onClose }: Props) {
   const [query, setQuery] = useState('');
 
@@ -30,22 +36,30 @@ export function HeroPicker({ heroes, disabledIds, bracket, title, onPick, onClos
     return q ? list : [...list].sort((a, b) => pickCount(b, bracket) - pickCount(a, bracket));
   }, [heroes, query, bracket]);
 
+  const someDisabled = filtered.some((h) => disabledIds.has(h.id));
+
   return (
     <div className="picker-overlay" onClick={onClose}>
       <div className="picker" onClick={(e) => e.stopPropagation()}>
+        <div className="picker-grip" />
         <div className="picker-head">
           <strong>{title}</strong>
-          <button className="btn-ghost" onClick={onClose}>
-            Закрыть
+          <button className="picker-close" onClick={onClose} aria-label="Закрыть">
+            ×
           </button>
         </div>
-        <input
-          className="search"
-          autoFocus
-          placeholder="Поиск героя…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="picker-search">
+          <input
+            className="search"
+            autoFocus
+            placeholder="Поиск героя"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <div className="picker-hint">
+          {query ? `найдено ${filtered.length}` : `по популярности · ${BRACKET_NAME[String(bracket)]}`}
+        </div>
         <div className="hero-grid">
           {filtered.map((hero) => {
             const disabled = disabledIds.has(hero.id);
@@ -66,6 +80,7 @@ export function HeroPicker({ heroes, disabledIds, bracket, title, onPick, onClos
           })}
           {filtered.length === 0 && <p className="muted">Ничего не найдено</p>}
         </div>
+        {someDisabled && <div className="picker-foot">приглушённые уже заняты в драфте</div>}
       </div>
     </div>
   );

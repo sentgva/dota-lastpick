@@ -1,15 +1,34 @@
-/* Служебные стили: цель — читаемость и работоспособность. Дизайн делаем отдельно. */
+/* Палитра и шкала кеглей перенесены из канваса Claude Design («Last Pick — экраны»).
+   Ключевые решения дизайна:
+   - сторона (враг/союзник) кодируется ФОРМОЙ слота, а не цветом;
+   - знак числа — направлением полосы от центра и парой акцент/серый,
+     красно-зелёная пара не используется нигде (её не различают ~8% мужчин);
+   - шкала кеглей: 11 · 13 · 15 · 19 · 24, без промежуточных значений. */
 
 :root {
-  --bg: var(--tg-bg-color, #17212b);
-  --card: var(--tg-secondary-bg-color, #232e3c);
-  --text: var(--tg-text-color, #f5f5f5);
-  --muted: var(--tg-hint-color, #8899a6);
-  --accent: var(--tg-button-color, #4a9eff);
-  --pos: #5ac37a;
-  --neg: #e2685a;
-  --enemy: #b3473c;
-  --ally: #3f7a4f;
+  --bg: var(--tg-bg-color, #161826);
+  --surface: var(--tg-secondary-bg-color, #232532);
+  --text: var(--tg-text-color, #e9e9ed);
+
+  --neutral-300: #c3c6d4;
+  --neutral-400: #a2a6b8;
+  --neutral-500: #8b8fa3;
+  --neutral-600: #6f7387;
+  --neutral-700: #4d5162;
+  --neutral-900: #1b1d2b;
+  --divider: rgba(255, 255, 255, 0.09);
+
+  --accent: #b5abfc;
+  --accent-200: #d2cefd;
+  --accent-300: #c4bcfd;
+  --accent-700: #4a4470;
+
+  /* Знак величины: польза — акцент, вред — нейтральный серый. */
+  --pos: #b5abfc;
+  --neg: #b2b6ca;
+
+  --warn: #e0a35a;
+  --radius: 8px;
   color-scheme: dark;
 }
 
@@ -19,155 +38,539 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.app { padding: 12px 12px 40px; max-width: 720px; margin: 0 auto; }
+.app { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
 .center { padding: 40px 16px; text-align: center; }
-.muted { color: var(--muted); }
-.small { font-size: 12px; }
-.error { color: var(--neg); }
+.muted { color: var(--neutral-500); }
+.small { font-size: 13px; }
+.error { color: var(--warn); }
 .pos { color: var(--pos); }
 .neg { color: var(--neg); }
-h3 { font-size: 14px; margin: 16px 0 8px; }
-h4 { font-size: 13px; margin: 12px 0 6px; color: var(--muted); }
 
-/* Табы */
-.tabs { display: flex; gap: 8px; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 5; }
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--neutral-400);
+  margin: 0 0 7px;
+}
+.section-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--neutral-600);
+  letter-spacing: 0;
+}
+h3, h4 {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--neutral-400);
+  font-weight: 500;
+}
+h3 { margin: 16px 0 7px; }
+h4 { margin: 12px 0 6px; }
+
+/* Вкладки — подчёркивание, а не заливка */
+.tabs {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  box-shadow: inset 0 -1px 0 var(--divider);
+  z-index: 5;
+}
 .tabs button {
-  flex: 1; padding: 10px; border: 0; border-radius: 8px;
-  background: var(--card); color: var(--muted); font-size: 14px; cursor: pointer;
+  flex: 1;
+  padding: 13px 0;
+  border: 0;
+  background: none;
+  color: var(--neutral-500);
+  font-size: 15px;
+  cursor: pointer;
 }
-.tabs button.active { background: var(--accent); color: #fff; }
+.tabs button.active {
+  color: var(--accent-300);
+  font-weight: 500;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
 
-/* Слоты драфта */
+/* ─── Слоты драфта: сторона кодируется формой ─── */
+.draft-side { margin-top: 12px; }
 .slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+
 .slot {
-  position: relative; border-radius: 8px; overflow: hidden; cursor: pointer;
-  background: var(--card); aspect-ratio: 16 / 12; border: 2px solid transparent;
+  position: relative;
+  background: var(--surface);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  min-height: 62px;
 }
-.slot-enemy { border-color: var(--enemy); }
-.slot-ally { border-color: var(--ally); }
-.slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.slot-empty { color: var(--muted); font-size: 22px; display: flex; align-items: center; justify-content: center; }
+/* враг — срезанный угол и прямые края */
+.slot-enemy { clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
+/* союзник — скруглённый */
+.slot-ally { border-radius: var(--radius); }
+
+.slot img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  background: var(--neutral-900);
+}
 .slot-name {
-  position: absolute; bottom: 0; left: 0; right: 0; padding: 2px 3px;
-  font-size: 9px; background: rgba(0, 0, 0, 0.65); text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block;
+  font-size: 11px;
+  padding: 3px 3px 4px;
+  text-align: center;
+  color: var(--neutral-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.slot-empty {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px dashed var(--neutral-700);
+  color: var(--neutral-600);
+  font-size: 19px;
 }
 .slot-clear {
-  position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
-  border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; cursor: pointer; line-height: 1;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: color-mix(in srgb, #0d0e18 65%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-/* Контролы */
-.controls { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin: 14px 0 6px; }
-.controls label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
-select, .search, input[type='range'] {
-  background: var(--card); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px; padding: 8px; font-size: 14px;
+/* Пятый слот команды — место, которое подбирает приложение */
+.slot-lastpick {
+  position: relative;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-300);
+  text-align: center;
+  min-height: 62px;
 }
-.search { width: 100%; margin-bottom: 8px; }
+.slot-lastpick img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; opacity: 0.5; display: block; }
+.slot-lastpick-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  padding: 3px 2px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ─── Контролы ─── */
+.controls { display: flex; gap: 6px; align-items: center; margin: 12px 0 0; }
+.control {
+  flex: 1;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--neutral-300);
+  font-size: 13px;
+  min-width: 0;
+}
+.control-icon {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--neutral-400);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+}
+.control-icon.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.search {
+  width: 100%;
+  height: 44px;
+  padding: 0 11px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  font-size: 15px;
+}
+.search:focus { outline: none; border-color: var(--accent); }
 .btn-ghost {
-  background: var(--card); color: var(--text); border: 0; border-radius: 8px;
-  padding: 9px 12px; font-size: 13px; cursor: pointer;
+  background: none;
+  color: var(--neutral-300);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
 }
-.tuning { display: grid; gap: 8px; background: var(--card); padding: 10px; border-radius: 8px; }
-.slider { display: grid; gap: 4px; font-size: 12px; }
-.toggle { display: flex; gap: 8px; align-items: center; margin: 10px 0; font-size: 13px; }
+.btn-accent { border-color: var(--accent); color: var(--accent); }
 
-/* Карточка рекомендации */
-.card { background: var(--card); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+/* Панель весов */
+.tuning {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface);
+  padding: 12px;
+  border-radius: var(--radius);
+  margin-top: 10px;
+}
+.slider { display: flex; flex-direction: column; gap: 7px; }
+.slider-head { display: flex; align-items: baseline; font-size: 15px; }
+.slider-value {
+  margin-left: auto;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-300);
+}
+.slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+.tuning-foot { display: flex; align-items: center; gap: 10px; }
+.tuning-foot p { margin: 0; flex: 1; font-size: 11px; color: var(--neutral-600); }
+.toggle { display: flex; gap: 10px; align-items: center; margin: 10px 0; font-size: 13px; line-height: 1.35; }
+.toggle input { accent-color: var(--accent); flex: none; }
+
+/* ─── Карточка рекомендации ─── */
+.results { margin-top: 16px; }
+.card { background: var(--surface); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
 .card-head {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px;
-  background: none; border: 0; color: inherit; cursor: pointer; text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
-.card-head img { width: 48px; height: 27px; border-radius: 4px; object-fit: cover; }
-.card-title { display: flex; flex-direction: column; flex: 1; gap: 2px; }
-.rank { width: 20px; color: var(--muted); font-size: 12px; }
-.score { font-weight: 600; font-variant-numeric: tabular-nums; }
+.card-head img {
+  width: 72px;
+  height: 41px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: none;
+  background: var(--neutral-900);
+}
+.card-title { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.card-title strong {
+  font-size: 15px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-title span {
+  font-size: 11px;
+  color: var(--neutral-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank {
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--neutral-500);
+  flex: none;
+}
+.score { font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
-.bars { padding: 0 10px 10px; display: grid; gap: 4px; }
-.bar { display: grid; grid-template-columns: 62px 1fr 48px; align-items: center; gap: 6px; font-size: 11px; }
-.bar-label { color: var(--muted); }
-.bar-track { height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 3px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 3px; }
+/* Полосы вклада: растут от центра — вправо плюс, влево минус */
+.bars { padding: 0 10px 9px; display: flex; flex-direction: column; gap: 5px; }
+.bar { display: grid; grid-template-columns: 58px 1fr 46px; align-items: center; gap: 8px; font-size: 11px; }
+.bar-label { color: var(--neutral-500); display: flex; align-items: center; }
+.bar-track {
+  position: relative;
+  height: 7px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.bar-zero { position: absolute; top: -2px; bottom: -2px; left: 50%; width: 1px; background: var(--neutral-700); }
+.bar-fill { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
 .bar-fill.pos { background: var(--pos); }
 .bar-fill.neg { background: var(--neg); }
 .bar-value { text-align: right; font-variant-numeric: tabular-nums; }
 
-.card-body { padding: 0 10px 12px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
-.note { color: var(--accent); font-size: 12px; margin: 8px 0; }
-.breakdown { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.breakdown li { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+.card-body { padding: 0 10px 12px; border-top: 1px solid var(--divider); }
+.note {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 13px;
+  color: var(--accent-200);
+  line-height: 1.4;
+  margin: 10px 0;
+}
 
-/* Пикер героев */
-.picker-overlay {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7);
-  display: flex; align-items: flex-end; z-index: 20;
-}
-.picker {
-  background: var(--bg); width: 100%; max-height: 85vh; border-radius: 14px 14px 0 0;
-  padding: 12px; display: flex; flex-direction: column;
-}
-.picker-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.hero-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 6px; overflow-y: auto; padding-bottom: 20px;
-}
-.hero-cell {
-  background: var(--card); border: 0; border-radius: 6px; padding: 0; overflow: hidden;
-  cursor: pointer; color: var(--text); display: flex; flex-direction: column;
-}
-.hero-cell img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
-.hero-cell span { font-size: 9px; padding: 3px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hero-cell.is-disabled { opacity: 0.3; cursor: not-allowed; }
-
-/* Билды */
-.hero-header { display: flex; gap: 12px; align-items: center; margin: 10px 0; }
-.hero-header img { width: 96px; border-radius: 8px; }
-.hero-header h2 { margin: 0; font-size: 18px; }
-.build { margin-top: 12px; }
-.phase { margin-bottom: 10px; }
-.item-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-.item { flex: 0 0 64px; text-align: center; }
-.item img, .item-placeholder {
-  width: 64px; height: 48px; object-fit: cover; border-radius: 4px; background: rgba(255, 255, 255, 0.06);
-}
-.item-name { display: block; font-size: 9px; line-height: 1.2; margin-top: 2px; }
-.item-caption { display: block; font-size: 9px; color: var(--muted); }
-.counter-build { border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px; }
-.threats { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
-.tag { background: var(--enemy); border-radius: 4px; padding: 1px 5px; }
-.reasons { margin: 8px 0 0; padding-left: 16px; font-size: 11px; color: var(--muted); }
-.results { margin-top: 16px; }
-
-/* Надёжность выборки: матчапы OpenDota часто считаются по десяткам игр,
-   поэтому объём и погрешность показываем прямо в разборе. */
-.sample-note { font-size: 11px; margin: 0 0 6px; color: var(--muted); }
-.sample-note.sample-low { color: #e0a35a; }
+.breakdown { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.breakdown li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
 .breakdown-wide li {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
   gap: 8px;
   align-items: baseline;
+  padding: 5px 0;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--text) 7%, transparent);
 }
 .breakdown-wide li.is-weak { opacity: 0.55; }
-.cr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cr-wr { font-variant-numeric: tabular-nums; }
-.cr-moe { color: var(--muted); font-size: 10px; }
-.cr-games { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-.cr-adv { font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
+.cr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.cr-wr { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--neutral-300); }
+.cr-moe { color: var(--neutral-600); font-size: 11px; }
+.cr-games { color: var(--neutral-600); font-size: 11px; font-variant-numeric: tabular-nums; }
+.cr-adv {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
+  text-align: right;
+}
+.combo-row { display: flex; gap: 9px; align-items: flex-start; }
+.combo-row strong { font-size: 13px; font-weight: 500; }
+.combo-row p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--neutral-400); }
+
+/* Надёжность выборки */
+.sample-note { font-size: 11px; margin: 0 0 6px; color: var(--neutral-500); }
+.sample-note.sample-low { color: var(--warn); }
 .warn-dot {
   display: inline-grid;
   place-items: center;
-  width: 12px;
-  height: 12px;
-  margin-left: 4px;
+  width: 13px;
+  height: 13px;
+  margin-left: 5px;
   border-radius: 50%;
-  background: #e0a35a;
-  color: #17212b;
-  font-size: 9px;
+  background: var(--warn);
+  color: #161826;
+  font-size: 10px;
   font-weight: 700;
-  vertical-align: middle;
 }
+
+/* ─── Шторка выбора героя ─── */
+.picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #0a0b14 72%, transparent);
+  display: flex;
+  align-items: flex-end;
+  z-index: 20;
+}
+.picker {
+  background: var(--bg);
+  width: 100%;
+  max-height: 85vh;
+  border-radius: 14px 14px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+.picker-grip { width: 38px; height: 4px; border-radius: 2px; background: var(--neutral-700); margin: 8px auto 0; }
+.picker-head { display: flex; align-items: center; gap: 10px; padding: 8px 14px 10px; }
+.picker-head strong { font-size: 16px; font-weight: 500; }
+.picker-close {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--neutral-300);
+  font-size: 15px;
+  cursor: pointer;
+}
+.picker-search { padding: 0 14px 10px; }
+.picker-hint {
+  padding: 0 14px 8px;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--neutral-600);
+}
+.picker-foot { padding: 10px 14px 34px; font-size: 11px; color: var(--neutral-600); }
+
+/* ─── Сетка героев ─── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  /* строки по содержимому — иначе портреты сплющиваются при нехватке высоты */
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 8px;
+}
+
+/* Скролл и боковые поля нужны только внутри шторки выбора героя. */
+.picker .hero-grid {
+  overflow-y: auto;
+  padding: 0 14px 20px;
+  -webkit-overflow-scrolling: touch;
+}
+.hero-cell {
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+.hero-cell img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  background: var(--neutral-900);
+}
+.hero-cell span {
+  font-size: 11px;
+  padding: 4px 4px 5px;
+  text-align: center;
+  color: var(--neutral-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-cell.is-disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ─── Билды ─── */
+.tab { padding-top: 12px; }
+.hero-header { display: flex; gap: 11px; align-items: center; margin: 10px 0 12px; }
+.hero-header img {
+  width: 128px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex: none;
+  background: var(--neutral-900);
+}
+.hero-header h2 { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.1; }
+.hero-header p { margin: 2px 0 0; font-size: 13px; color: var(--neutral-500); }
+.build { margin-top: 12px; }
+.phase { margin-bottom: 12px; }
+.item-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; }
+.item { flex: 0 0 62px; }
+.item img, .item-placeholder {
+  width: 62px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 5px;
+  background: var(--neutral-900);
+  display: block;
+}
+.item-name {
+  display: block;
+  font-size: 11px;
+  margin-top: 3px;
+  color: var(--neutral-400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item-caption {
+  display: block;
+  font-size: 11px;
+  color: var(--neutral-600);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Блок «против драфта соперника» — акцентная рамка, он ценнее обычного закупа */
+.counter-build {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent-700);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  margin-bottom: 12px;
+}
+.counter-build h4 { color: var(--accent-300); margin: 0; }
+.threats { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.threats li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--accent-700);
+  color: var(--accent-200);
+}
+.threats b { font-variant-numeric: tabular-nums; color: var(--neutral-400); font-weight: 400; }
+.reasons { margin: 2px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.reasons li { font-size: 13px; line-height: 1.4; color: var(--neutral-300); }
+.reasons strong { color: var(--text); font-weight: 600; }
+
+/* Пустое состояние */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  text-align: center;
+  margin-top: 12px;
+}
+.empty p { margin: 0; }
+.empty-title { font-size: 15px; color: var(--neutral-300); }
+.empty-sub { font-size: 13px; color: var(--neutral-600); }
+
+/* Обновление данных поверх уже показанного списка */
+.refreshing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-size: 13px;
+  color: var(--accent-200);
+  margin-top: 10px;
+}
+.refreshing span { margin-left: auto; font-size: 11px; color: var(--neutral-400); }
