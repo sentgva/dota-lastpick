@@ -1,0 +1,143 @@
+/* Служебные стили: цель — читаемость и работоспособность. Дизайн делаем отдельно. */
+
+:root {
+  --bg: var(--tg-bg-color, #17212b);
+  --card: var(--tg-secondary-bg-color, #232e3c);
+  --text: var(--tg-text-color, #f5f5f5);
+  --muted: var(--tg-hint-color, #8899a6);
+  --accent: var(--tg-button-color, #4a9eff);
+  --pos: #5ac37a;
+  --neg: #e2685a;
+  --enemy: #b3473c;
+  --ally: #3f7a4f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.app { padding: 12px 12px 40px; max-width: 720px; margin: 0 auto; }
+.center { padding: 40px 16px; text-align: center; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.error { color: var(--neg); }
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+h3 { font-size: 14px; margin: 16px 0 8px; }
+h4 { font-size: 13px; margin: 12px 0 6px; color: var(--muted); }
+
+/* Табы */
+.tabs { display: flex; gap: 8px; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 5; }
+.tabs button {
+  flex: 1; padding: 10px; border: 0; border-radius: 8px;
+  background: var(--card); color: var(--muted); font-size: 14px; cursor: pointer;
+}
+.tabs button.active { background: var(--accent); color: #fff; }
+
+/* Слоты драфта */
+.slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.slot {
+  position: relative; border-radius: 8px; overflow: hidden; cursor: pointer;
+  background: var(--card); aspect-ratio: 16 / 12; border: 2px solid transparent;
+}
+.slot-enemy { border-color: var(--enemy); }
+.slot-ally { border-color: var(--ally); }
+.slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slot-empty { color: var(--muted); font-size: 22px; display: flex; align-items: center; justify-content: center; }
+.slot-name {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 2px 3px;
+  font-size: 9px; background: rgba(0, 0, 0, 0.65); text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.slot-clear {
+  position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
+  border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; cursor: pointer; line-height: 1;
+}
+
+/* Контролы */
+.controls { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin: 14px 0 6px; }
+.controls label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+select, .search, input[type='range'] {
+  background: var(--card); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px; padding: 8px; font-size: 14px;
+}
+.search { width: 100%; margin-bottom: 8px; }
+.btn-ghost {
+  background: var(--card); color: var(--text); border: 0; border-radius: 8px;
+  padding: 9px 12px; font-size: 13px; cursor: pointer;
+}
+.tuning { display: grid; gap: 8px; background: var(--card); padding: 10px; border-radius: 8px; }
+.slider { display: grid; gap: 4px; font-size: 12px; }
+.toggle { display: flex; gap: 8px; align-items: center; margin: 10px 0; font-size: 13px; }
+
+/* Карточка рекомендации */
+.card { background: var(--card); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.card-head {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px;
+  background: none; border: 0; color: inherit; cursor: pointer; text-align: left;
+}
+.card-head img { width: 48px; height: 27px; border-radius: 4px; object-fit: cover; }
+.card-title { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+.rank { width: 20px; color: var(--muted); font-size: 12px; }
+.score { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.bars { padding: 0 10px 10px; display: grid; gap: 4px; }
+.bar { display: grid; grid-template-columns: 62px 1fr 48px; align-items: center; gap: 6px; font-size: 11px; }
+.bar-label { color: var(--muted); }
+.bar-track { height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.bar-fill.pos { background: var(--pos); }
+.bar-fill.neg { background: var(--neg); }
+.bar-value { text-align: right; font-variant-numeric: tabular-nums; }
+
+.card-body { padding: 0 10px 12px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.note { color: var(--accent); font-size: 12px; margin: 8px 0; }
+.breakdown { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.breakdown li { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+
+/* Пикер героев */
+.picker-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7);
+  display: flex; align-items: flex-end; z-index: 20;
+}
+.picker {
+  background: var(--bg); width: 100%; max-height: 85vh; border-radius: 14px 14px 0 0;
+  padding: 12px; display: flex; flex-direction: column;
+}
+.picker-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.hero-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px; overflow-y: auto; padding-bottom: 20px;
+}
+.hero-cell {
+  background: var(--card); border: 0; border-radius: 6px; padding: 0; overflow: hidden;
+  cursor: pointer; color: var(--text); display: flex; flex-direction: column;
+}
+.hero-cell img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.hero-cell span { font-size: 9px; padding: 3px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hero-cell.is-disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Билды */
+.hero-header { display: flex; gap: 12px; align-items: center; margin: 10px 0; }
+.hero-header img { width: 96px; border-radius: 8px; }
+.hero-header h2 { margin: 0; font-size: 18px; }
+.build { margin-top: 12px; }
+.phase { margin-bottom: 10px; }
+.item-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.item { flex: 0 0 64px; text-align: center; }
+.item img, .item-placeholder {
+  width: 64px; height: 48px; object-fit: cover; border-radius: 4px; background: rgba(255, 255, 255, 0.06);
+}
+.item-name { display: block; font-size: 9px; line-height: 1.2; margin-top: 2px; }
+.item-caption { display: block; font-size: 9px; color: var(--muted); }
+.counter-build { border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px; }
+.threats { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
+.tag { background: var(--enemy); border-radius: 4px; padding: 1px 5px; }
+.reasons { margin: 8px 0 0; padding-left: 16px; font-size: 11px; color: var(--muted); }
+.results { margin-top: 16px; }
