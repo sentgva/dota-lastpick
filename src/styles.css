@@ -29,6 +29,8 @@
 
   --warn: #e0a35a;
   --radius: 8px;
+  /* Высота липких вкладок — от неё отсчитывается позиция поиска */
+  --tabs-h: 47px;
   color-scheme: dark;
 }
 
@@ -80,13 +82,14 @@ h4 { margin: 12px 0 6px; }
   display: flex;
   position: sticky;
   top: 0;
+  height: var(--tabs-h);
   background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--divider);
   z-index: 5;
 }
 .tabs button {
   flex: 1;
-  padding: 13px 0;
+  padding: 0;
   border: 0;
   background: none;
   color: var(--neutral-500);
@@ -485,13 +488,16 @@ h4 { margin: 12px 0 6px; }
 }
 .picker-foot { padding: 10px 14px 34px; font-size: 11px; color: var(--neutral-600); }
 
-/* Поиск держим над списком: иначе карточки героев наезжают на поле при скролле */
+/* Поиск держим над списком: иначе карточки героев наезжают на поле при скролле.
+   Тень сверху закрашивает щель между вкладками и полем — там раньше
+   просвечивали проезжающие портреты. */
 .search-bar {
   position: sticky;
-  top: 48px;
+  top: var(--tabs-h);
   z-index: 4;
   background: var(--bg);
-  padding: 10px 0 4px;
+  padding: 10px 0 8px;
+  box-shadow: 0 -14px 0 var(--bg);
 }
 .list-hint {
   font-size: 11px;

@@ -51,15 +51,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  */
 const GOOD_MODES = new Set([1, 2, 3, 4, 16, 22]);
 
+/** Текущая версия формата: 3 — добавились items и vsItems. */
+const FORMAT_VERSION = 3;
+
 function loadSnapshot() {
   try {
     const s = JSON.parse(readFileSync(OUT, 'utf8'));
     console.log(`снапшот: ${s.matches.toLocaleString('ru')} матчей, обновлён ${s.updated}`);
+    // Старый снапшот дополняем новыми разделами, а не начинаем с нуля.
+    s.version = FORMAT_VERSION;
+    s.items ??= {};
+    s.vsItems ??= {};
     return s;
   } catch {
     console.log('снапшот не найден, начинаем с нуля');
     return {
-      version: 3,
+      version: FORMAT_VERSION,
       updated: null,
       matches: 0,
       sources: {},
