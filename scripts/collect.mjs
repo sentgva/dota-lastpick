@@ -301,6 +301,24 @@ const t0 = Date.now();
 let round = 0;
 let totalTaken = 0;
 
+// Первый отчёт приходит только в конце порции — это десятки минут,
+// поэтому сразу отбиваемся, что сбор пошёл.
+if (telegramReady) {
+  const eta = Math.round((REQUESTS * 2.8) / 60);
+  await sendReport(
+    `<b>Сбор запущен</b>
+
+` +
+      `В базе сейчас: <b>${snap.matches.toLocaleString('ru')}</b> матчей
+` +
+      `Порция: ${REQUESTS.toLocaleString('ru')} запросов — примерно ${eta} мин
+
+` +
+      `<i>Отчёт придёт, когда порция досчитается.</i>`,
+    { withButton: false },
+  );
+}
+
 for (;;) {
   round += 1;
   const { taken } = await runRound();
