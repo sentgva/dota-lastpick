@@ -10,11 +10,11 @@
 export type Position = 1 | 2 | 3 | 4 | 5;
 
 export const POSITION_LABEL: Record<Position, string> = {
-  1: 'Керри',
-  2: 'Мид',
-  3: 'Тройка',
-  4: 'Сап',
-  5: 'Хард сап',
+  1: 'Carry',
+  2: 'Mid',
+  3: 'Hard',
+  4: 'Support',
+  5: 'Hard Support',
 };
 
 /** Кто играет на каждой позиции. Герой может встречаться в нескольких списках. */
@@ -37,7 +37,7 @@ const BY_POSITION: Record<Position, string[]> = {
     'broodmother', 'morphling', 'kunkka',
   ],
   3: [
-    'abaddon', 'axe', 'batrider', 'elder_titan', 'beastmaster', 'brewmaster', 'bristleback', 'broodmother',
+    'abaddon', 'axe', 'batrider', 'elder_titan', 'largo', 'beastmaster', 'brewmaster', 'bristleback', 'broodmother',
     'centaur', 'dark_seer', 'dawnbreaker', 'doom_bringer', 'enigma', 'kunkka',
     'legion_commander', 'lycan', 'magnataur', 'marci', 'mars', 'necrolyte', 'night_stalker',
     'omniknight', 'pangolier', 'primal_beast', 'sand_king', 'shredder', 'slardar',
@@ -45,7 +45,7 @@ const BY_POSITION: Record<Position, string[]> = {
     'phoenix', 'bloodseeker',
   ],
   4: [
-    'bounty_hunter', 'dark_willow', 'techies', 'ringmaster', 'elder_titan', 'earth_spirit', 'earthshaker', 'enigma',
+    'bounty_hunter', 'dark_willow', 'techies', 'ringmaster', 'elder_titan', 'largo', 'earth_spirit', 'earthshaker', 'enigma',
     'grimstroke', 'hoodwink', 'mirana', 'nyx_assassin', 'ogre_magi', 'phoenix', 'pudge',
     'rattletrap', 'riki', 'rubick', 'sand_king', 'shadow_demon', 'silencer', 'skywrath_mage',
     'snapfire', 'spirit_breaker', 'tusk', 'venomancer', 'vengefulspirit', 'void_spirit',
@@ -81,7 +81,11 @@ export function playsPosition(shortName: string, position: Position): boolean {
   return positionsOf(shortName).includes(position);
 }
 
-/** Герои, для которых позиция не проставлена — нужны для проверки полноты списка. */
-export function knownHeroCount(): number {
-  return INDEX.size;
+/**
+ * Подпись позиций для карточки героя: «Carry · Mid».
+ * Принимает полное имя из API (npc_dota_hero_antimage).
+ */
+export function positionLabelsOf(heroName: string): string {
+  const list = positionsOf(heroName.replace('npc_dota_hero_', ''));
+  return list.length ? list.map((p) => POSITION_LABEL[p]).join(' · ') : 'позиция не указана';
 }

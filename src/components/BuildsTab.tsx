@@ -3,7 +3,7 @@ import type { Bracket, Hero } from '../types';
 import { heroImg } from '../api/opendota';
 import { baseWinrate, pickCount } from '../lib/score';
 import { HeroBuild } from './HeroBuild';
-import { POSITION_LABEL, playsPosition, positionsOf, type Position } from '../data/positions';
+import { POSITION_LABEL, playsPosition, positionLabelsOf, type Position } from '../data/positions';
 import { shortName } from '../data/synergy';
 
 interface Props {
@@ -40,7 +40,7 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
           <img src={heroImg(selected)} alt={selected.localized_name} />
           <div>
             <h2>{selected.localized_name}</h2>
-            <p>{positionLabels(selected.name) || selected.roles.join(' · ')}</p>
+            <p>{positionLabelsOf(selected.name)}</p>
             <p>
               винрейт <b>{baseWinrate(selected, bracket).toFixed(1)}%</b>
             </p>
@@ -104,11 +104,4 @@ export function BuildsTab({ heroes, bracket, enemies }: Props) {
       {filtered.length === 0 && <p className="muted">Ничего не найдено</p>}
     </div>
   );
-}
-
-/** «Керри · Мид» вместо ролей OpenDota, если позиция героя известна. */
-function positionLabels(heroName: string): string {
-  return positionsOf(shortName(heroName))
-    .map((p) => POSITION_LABEL[p])
-    .join(' · ');
 }
