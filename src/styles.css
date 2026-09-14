@@ -568,15 +568,9 @@ h4 { margin: 12px 0 6px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.item-caption {
-  display: block;
-  font-size: 11px;
-  color: var(--neutral-600);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.phase-label { margin: 0 0 5px; font-size: 13px; color: var(--neutral-500); }
+.chips-sm { padding: 4px 0 10px; }
+.chips-sm .chip { padding: 5px 11px; font-size: 12px; }
 
 /* Блок «против драфта соперника» — акцентная рамка, он ценнее обычного закупа */
 .counter-build {

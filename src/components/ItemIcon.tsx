@@ -4,12 +4,10 @@ import { itemImg } from '../api/opendota';
 interface Props {
   item: ItemConstant | undefined;
   fallbackName?: string;
-  /** Подпись под иконкой: количество закупов или причина. */
-  caption?: string;
   title?: string;
 }
 
-export function ItemIcon({ item, fallbackName, caption, title }: Props) {
+export function ItemIcon({ item, fallbackName, title }: Props) {
   const label = item?.dname ?? fallbackName ?? 'Неизвестный предмет';
   return (
     <div className="item" title={title ?? label}>
@@ -19,7 +17,6 @@ export function ItemIcon({ item, fallbackName, caption, title }: Props) {
         <div className="item-placeholder" />
       )}
       <span className="item-name">{label}</span>
-      {caption && <span className="item-caption">{caption}</span>}
     </div>
   );
 }

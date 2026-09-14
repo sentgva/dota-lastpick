@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import type { Hero, ItemConstant, ItemPopularity } from '../types';
 import { useItemConstants, useItemPopularity } from '../hooks/useDota';
 import { ItemIcon } from './ItemIcon';
 import { counterItems, draftThreats } from '../data/itemCounters';
 import { shortName } from '../data/synergy';
 import { isWholeItem } from '../data/wholeItems';
+import { fitsPosition } from '../data/itemRoles';
+import { POSITION_LABEL, positionsOf, type Position } from '../data/positions';
 
 const PHASES: { key: keyof ItemPopularity; label: string }[] = [
   { key: 'start_game_items', label: 'Старт' },
@@ -23,6 +26,10 @@ interface Props {
 export function HeroBuild({ hero, enemies = [] }: Props) {
   const items = useItemConstants();
   const popularity = useItemPopularity(hero.id);
+
+  const heroPositions = positionsOf(shortName(hero.name));
+  // По умолчанию — основная позиция героя; «Все» показывает закуп целиком.
+  const [position, setPosition] = useState<Position | null>(heroPositions[0] ?? null);
 
   const byId = items.data?.byId;
   const byKey = items.data?.byKey;
@@ -75,46 +82,62 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
         </section>
       )}
 
-      <h4>
-        Популярный закуп
-        {enemies.length > 0 && <span className="section-count">без учёта драфта</span>}
-      </h4>
+      <h4>Популярный закуп</h4>
+
+      {heroPositions.length > 0 && (
+        <div className="chips chips-sm">
+          {heroPositions.map((p) => (
+            <button
+              key={p}
+              className={`chip${position === p ? ' is-on' : ''}`}
+              onClick={() => setPosition(p)}
+            >
+              {POSITION_LABEL[p]}
+            </button>
+          ))}
+          <button className={`chip${position === null ? ' is-on' : ''}`} onClick={() => setPosition(null)}>
+            Всё
+          </button>
+        </div>
+      )}
 
       {popularity.loading && <p className="muted small">Загрузка закупа…</p>}
       {popularity.error && <p className="error small">{popularity.error}</p>}
 
       {popularity.data &&
         PHASES.map(({ key, label }) => {
-          // Компоненты (палочки, Ultimate Orb, Broadsword) отсеиваем — в билде
-          // интересны только собранные предметы.
+          // Компоненты отсеиваем всегда, а при выбранной позиции оставляем только
+          // то, что на ней собирают: разбивки по позициям в API нет, это фильтр.
           const entries = Object.entries(popularity.data![key] ?? {})
             .map(([id, count]) => ({ id: Number(id), count: count as number }))
             .sort((a, b) => b.count - a.count)
             .map((e) => ({ ...e, found: byId?.get(e.id) }))
             .filter((e) => isWholeItem(e.found?.key ?? '', e.found?.item))
+            .filter((e) => position === null || fitsPosition(e.found?.key ?? '', position))
             .slice(0, TOP_PER_PHASE);
           if (entries.length === 0) return null;
           return (
             <section key={key} className="phase">
-              <p className="muted small" style={{ margin: '0 0 5px' }}>
-                {label}
-              </p>
+              <p className="phase-label">{label}</p>
               <div className="item-row">
-                {entries.map(({ id, count, found }) => (
-                  <ItemIcon key={id} item={found?.item} fallbackName={`#${id}`} caption={formatCount(count)} />
+                {entries.map(({ id, found }) => (
+                  <ItemIcon key={id} item={found?.item} fallbackName={`#${id}`} />
                 ))}
               </div>
             </section>
           );
         })}
+
+      {position !== null && (
+        <p className="muted small">
+          Сборка под {POSITION_LABEL[position]}: общий закуп героя, отфильтрованный по тому, что
+          собирают на этой позиции. Отдельной статистики по позициям OpenDota не отдаёт.
+        </p>
+      )}
     </div>
   );
 }
 
 function lookup(byKey: Record<string, ItemConstant> | undefined, key: string): ItemConstant | undefined {
   return byKey?.[key];
-}
-
-function formatCount(n: number): string {
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
