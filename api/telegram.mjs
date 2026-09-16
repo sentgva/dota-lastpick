@@ -70,6 +70,27 @@ async function statsText() {
   );
 }
 
+/**
+ * Чистка переписки. Своего состояния у функции нет, поэтому идём от id команды
+ * назад: в чате идентификаторы последовательные. Чужие и слишком старые (больше
+ * 48 часов — их Telegram удалять не даёт) просто не удалятся, ошибки игнорируем.
+ */
+async function clearChat(chatId, fromMessageId, depth = 200) {
+  const ids = [];
+  for (let id = fromMessageId; id > Math.max(1, fromMessageId - depth); id--) ids.push(id);
+
+  let deleted = 0;
+  // Пачками, чтобы не упереться в лимит Telegram на частоту запросов.
+  for (let i = 0; i < ids.length; i += 20) {
+    const chunk = ids.slice(i, i + 20);
+    const results = await Promise.all(
+      chunk.map((id) => tg('deleteMessage', { chat_id: chatId, message_id: id }).catch(() => ({ ok: false }))),
+    );
+    deleted += results.filter((r) => r?.ok).length;
+  }
+  return deleted;
+}
+
 async function handleAction(action, chatId) {
   if (action === 'stats') return statsText();
 
@@ -119,6 +140,17 @@ export default async function handler(req, res) {
     if (update.message?.text) {
       const chatId = String(update.message.chat.id);
       if (allowed && chatId !== allowed) return res.status(200).send('ok');
+
+      if (update.message.text.startsWith('/clear')) {
+        const deleted = await clearChat(chatId, update.message.message_id);
+        // Итог тоже присылаем сообщением — иначе непонятно, сработало ли.
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: deleted > 0 ? `Очищено сообщений: ${deleted}` : 'Нечего удалять.',
+        });
+        return res.status(200).send('ok');
+      }
+
       await tg('sendMessage', {
         chat_id: chatId,
         text:

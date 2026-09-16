@@ -54,5 +54,8 @@ if (info.result?.last_error_message) {
 }
 
 await call('setMyCommands', {
-  commands: [{ command: 'start', description: 'Управление сбором и статистика' }],
+  commands: [
+    { command: 'start', description: 'Управление сбором и статистика' },
+    { command: 'clear', description: 'Очистить переписку' },
+  ],
 });
