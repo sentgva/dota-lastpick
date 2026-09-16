@@ -39,6 +39,14 @@ jobs:
         run: |
           node scripts/collect.mjs             --source=steam             --requests=${{ inputs.requests || 1500 }}             --ask=${{ inputs.ask || 10 }}
 
+      - name: Notify finish
+        if: always()
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESULT: ${{ job.status }}
+        run: node scripts/notify-finish.mjs
+
       - name: Commit snapshot
         run: |
           git config user.name  "github-actions[bot]"

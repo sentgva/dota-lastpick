@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "bot": "node bot/bot.mjs",
     "bot:setup": "node bot/bot.mjs --setup",
-    "collect": "node scripts/collect.mjs --source=steam"
+    "collect": "node scripts/collect.mjs --source=steam",
+    "webhook": "node scripts/setup-webhook.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
