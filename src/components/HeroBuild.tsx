@@ -10,8 +10,9 @@ import { fitsPosition } from '../data/itemRoles';
 import { counterItemsOf, itemsOf } from '../api/stats';
 import { POSITION_LABEL, positionsOf, type Position } from '../data/positions';
 
-const TOP_CORE = 10;
-const TOP_START = 7;
+const TOP_START = 8;
+/** Граница между ранним закупом и ядром, золото. */
+const EARLY_COST = 2300;
 /** Винрейт предмета при меньшей выборке — шум, показываем только долю сборок. */
 const MIN_ITEM_GAMES = 60;
 
@@ -59,13 +60,22 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
   const own = itemsOf(stats, hero.id)
     .map((s) => ({ ...s, found: byId?.get(s.id) }))
     .filter((s) => isWholeItem(s.found?.key ?? '', s.found?.item))
-    .filter((s) => position === null || fitsPosition(s.found?.key ?? '', position))
-    .slice(0, TOP_CORE);
+    .filter((s) => position === null || fitsPosition(s.found?.key ?? '', position));
+
+  // Этапы разводим по цене: дешёвое собирают рано, дорогое — это ядро.
+  const early = own.filter((s) => (s.found?.item.cost ?? 0) <= EARLY_COST).slice(0, 8);
+  const core = own.filter((s) => (s.found?.item.cost ?? 0) > EARLY_COST).slice(0, 8);
+  // Ситуативное: берут не всегда, но с ним выигрывают заметно чаще.
+  const shown = new Set([...early, ...core].map((s) => s.id));
+  const situational = own
+    .filter((s) => !shown.has(s.id) && s.games >= MIN_ITEM_GAMES && s.pickRate >= 8 && s.winrate >= 52)
+    .sort((a, b) => b.winrate - a.winrate)
+    .slice(0, 8);
 
   const fallbackCore = own.length
     ? []
     : ['mid_game_items', 'late_game_items'].flatMap((k) =>
-        phaseItems(popularity.data, k as keyof ItemPopularity, byId, TOP_CORE, position),
+        phaseItems(popularity.data, k as keyof ItemPopularity, byId, 10, position),
       );
 
   return (
@@ -163,39 +173,24 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
         </section>
       )}
 
-      <section className="phase">
-        <h4>
-          Core Items
-          {own.length > 0 && <span className="section-count">win rate</span>}
-        </h4>
-        {own.length > 0 ? (
-          <div className="item-row">
-            {own.map((s) => (
-              <ItemIcon
-                key={s.id}
-                item={s.found?.item}
-                fallbackName={`#${s.id}`}
-                caption={s.games >= MIN_ITEM_GAMES ? `${s.winrate.toFixed(0)}%` : `${s.pickRate.toFixed(0)}%`}
-                captionTone={s.games >= MIN_ITEM_GAMES ? (s.winrate >= 50 ? 'pos' : 'neg') : undefined}
-                title={
-                  s.games >= MIN_ITEM_GAMES
-                    ? `${s.found?.item.dname ?? ''} — ${s.winrate.toFixed(1)}% win rate over ${s.games.toLocaleString('en')} games`
-                    : `${s.found?.item.dname ?? ''} — in ${s.pickRate.toFixed(0)}% of builds (${s.games} games, too few for a win rate)`
-                }
-                onOpen={setOpenItem}
-              />
-            ))}
-          </div>
-        ) : fallbackCore.length > 0 ? (
+      {own.length > 0 ? (
+        <>
+          <ItemStage title="Early Game" items={early} onOpen={setOpenItem} />
+          <ItemStage title="Core Items" items={core} onOpen={setOpenItem} />
+          <ItemStage title="Situational" items={situational} onOpen={setOpenItem} hint="higher win rate" />
+        </>
+      ) : fallbackCore.length > 0 ? (
+        <section className="phase">
+          <h4>Core Items</h4>
           <div className="item-row">
             {fallbackCore.map((e) => (
               <ItemIcon key={e.id} item={e.found?.item} fallbackName={`#${e.id}`} onOpen={setOpenItem} />
             ))}
           </div>
-        ) : (
-          <p className="muted small">No item data yet.</p>
-        )}
-      </section>
+        </section>
+      ) : (
+        <p className="muted small">No item data yet.</p>
+      )}
 
       <p className="build-note">
         {own.length > 0
@@ -206,6 +201,56 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
 
       {openItem && <ItemDetails item={openItem} onClose={() => setOpenItem(null)} />}
     </div>
+  );
+}
+
+interface StageItem {
+  id: number;
+  games: number;
+  pickRate: number;
+  winrate: number;
+  found?: { key: string; item: ItemConstant };
+}
+
+/** Один этап сборки: иконки с долей сборок и винрейтом, как в таблицах D2PT. */
+function ItemStage({
+  title,
+  items,
+  hint,
+  onOpen,
+}: {
+  title: string;
+  items: StageItem[];
+  hint?: string;
+  onOpen(item: ItemConstant): void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="phase">
+      <h4>
+        {title}
+        <span className="section-count">{hint ?? 'built · won'}</span>
+      </h4>
+      <div className="item-row">
+        {items.map((s) => (
+          <ItemIcon
+            key={s.id}
+            item={s.found?.item}
+            fallbackName={`#${s.id}`}
+            caption={`${s.pickRate.toFixed(0)}%`}
+            subCaption={s.games >= MIN_ITEM_GAMES ? `${s.winrate.toFixed(0)}%` : undefined}
+            subCaptionTone={s.winrate >= 50 ? 'pos' : 'neg'}
+            title={
+              `${s.found?.item.dname ?? ''} — in ${s.pickRate.toFixed(0)}% of builds` +
+              (s.games >= MIN_ITEM_GAMES
+                ? `, ${s.winrate.toFixed(1)}% win rate over ${s.games.toLocaleString('en')} games`
+                : ` (${s.games} games — too few for a win rate)`)
+            }
+            onOpen={onOpen}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
