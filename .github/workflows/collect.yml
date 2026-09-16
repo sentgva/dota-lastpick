@@ -46,6 +46,23 @@ jobs:
           git add public/stats.json
           git diff --staged --quiet && exit 0
           git commit -m "Обновить снапшот статистики [skip ci]"
-          # За время сбора в main могли попасть другие коммиты
-          git pull --rebase --autostash || true
-          git push
+
+          # Сбор идёт больше часа, за это время в main попадают другие коммиты.
+          # Снапшот построчно не сливается, поэтому при конфликте берём свой
+          # (он содержит все прежние данные плюс новые) и пробуем снова.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "снапшот отправлен с попытки $attempt"
+              exit 0
+            fi
+            echo "push отклонён, подтягиваю main (попытка $attempt)"
+            git fetch origin main
+            git rebase origin/main -X ours || {
+              git checkout --ours public/stats.json
+              git add public/stats.json
+              GIT_EDITOR=true git rebase --continue || git rebase --abort
+            }
+            sleep 5
+          done
+          echo "не удалось отправить снапшот за 5 попыток"
+          exit 1

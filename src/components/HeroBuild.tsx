@@ -39,9 +39,12 @@ export function HeroBuild({ hero, enemies = [] }: Props) {
 
   // Что реально собирают победители против этих героев. Курируемые правила
   // остаются ниже — они объясняют «почему», а это показывает «что».
+  // Берём с запасом: компоненты вроде Javelin и Demon Edge отсеиваются ниже,
+  // а без запаса после фильтра в блоке оставалась пара иконок.
   const measured = counterItemsOf(
     stats,
     enemies.map((e) => ({ id: e.id, name: e.localized_name })),
+    40,
   )
     .map((c) => ({ ...c, found: byId?.get(c.id) }))
     .filter((c) => isWholeItem(c.found?.key ?? '', c.found?.item))
